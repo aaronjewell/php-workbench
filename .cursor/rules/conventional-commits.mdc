@@ -35,6 +35,8 @@ Use scope to indicate the area of change:
 - No period at the end
 - Maximum 50 characters for the subject line
 - Be specific and descriptive
+- **Describe only actual changes made**, not abstract outcomes or future promises
+- Use a concise style
 
 ## Examples
 
@@ -55,6 +57,16 @@ chore(deps): update @types/vscode to latest version
 ❌ Update code
 ❌ WIP
 ❌ Fixed bug in the thing that was broken
+❌ Enforce consistent formatting in CI/publishing pipeline
+❌ Ensure code quality across the project
+❌ Implement robust error handling
+```
+
+### ✅ Better: Describe Actual Changes
+```
+✅ add format:check to vscode:prepublish script
+✅ install prettier and add formatting configuration  
+✅ add try-catch blocks to executeCode method
 ```
 
 ## Integration with Incremental Delivery
@@ -69,6 +81,8 @@ Use the body to explain:
 - **What** problem it solves
 - **How** it relates to requirements or user stories
 - Any important context or constraints
+- **Focus on concrete changes made**, not abstract benefits or future goals
+- Use a concise style
 
 ## Example with Body
 ```
