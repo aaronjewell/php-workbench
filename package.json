@@ -16,6 +16,10 @@
       {
         "command": "quickmix.newScratchpad",
         "title": "QuickMix: New Scratchpad"
+      },
+      {
+        "command": "quickmix.executeCode",
+        "title": "QuickMix: Execute Code"
       }
     ],
     "keybindings": [
@@ -23,6 +27,12 @@
         "command": "quickmix.newScratchpad",
         "key": "ctrl+alt+n",
         "mac": "cmd+alt+n"
+      },
+      {
+        "command": "quickmix.executeCode",
+        "key": "ctrl+enter",
+        "mac": "cmd+enter",
+        "when": "editorTextFocus && resourceLangId == php"
       }
     ]
   },

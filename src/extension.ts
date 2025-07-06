@@ -22,7 +22,11 @@ export function activate(context: vscode.ExtensionContext) {
     }
   });
 
-  context.subscriptions.push(disposable);
+  const executeCommand = vscode.commands.registerCommand('quickmix.executeCode', async () => {
+    // Minimal implementation to pass tests - will be expanded in subsequent steps
+  });
+
+  context.subscriptions.push(disposable, executeCommand);
 }
 
 // This method is called when your extension is deactivated

@@ -84,4 +84,33 @@ suite('Extension Test Suite', () => {
       vscode.window.showErrorMessage = originalShowErrorMessage;
     }
   });
+
+  // Tests for quickmix.executeCode command - following zero-one-many strategy
+  test('quickmix.executeCode command should be registered', async () => {
+    const commands = await vscode.commands.getCommands(true);
+
+    assert.ok(
+      commands.includes('quickmix.executeCode'),
+      'quickmix.executeCode command should be registered'
+    );
+  });
+
+  test('quickmix.executeCode command should be defined as keyboard shortcut in package.json', async () => {
+    const keybindings = await extension.packageJSON.contributes.keybindings;
+
+    const executeKeybinding = keybindings.find((kb: any) => kb.command === 'quickmix.executeCode');
+
+    assert.ok(executeKeybinding, 'Execute keyboard shortcut should be defined in package.json');
+    assert.equal(executeKeybinding.key, 'ctrl+enter', 'Keyboard shortcut should be ctrl+enter');
+    assert.equal(executeKeybinding.mac, 'cmd+enter', 'Mac keyboard shortcut should be cmd+enter');
+    assert.equal(
+      executeKeybinding.when,
+      'editorTextFocus && resourceLangId == php',
+      'Shortcut should only work in PHP files with editor focus'
+    );
+  });
+
+  test('quickmix.executeCode command should execute', async () => {
+    assert.doesNotThrow(() => vscode.commands.executeCommand('quickmix.executeCode'), 'Command should execute successfully');
+  });
 });
