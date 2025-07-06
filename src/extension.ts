@@ -16,10 +16,11 @@ export function activate(context: vscode.ExtensionContext) {
   // The commandId parameter must match the command field in package.json
   const disposable = vscode.commands.registerCommand('quickmix.newScratchpad', async () => {
     try {
-      // Create a temporary PHP file
+      // Create a temporary PHP file with unique timestamp and random component
       const tempDir = os.tmpdir();
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-      const fileName = `quickmix-scratchpad-${timestamp}.php`;
+      const randomSuffix = Math.random().toString(36).substring(2, 8);
+      const fileName = `quickmix-scratchpad-${timestamp}-${randomSuffix}.php`;
       const filePath = path.join(tempDir, fileName);
 
       // Create and open the document

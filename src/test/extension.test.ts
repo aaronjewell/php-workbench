@@ -58,4 +58,79 @@ suite('Extension Test Suite', () => {
       'Created file should have .php extension'
     );
   });
+
+  test('quickmix.newScratchpad command should handle errors gracefully', async () => {
+    // Mock openTextDocument to throw an error
+    const originalOpenTextDocument = vscode.workspace.openTextDocument;
+    const originalShowErrorMessage = vscode.window.showErrorMessage;
+    let errorMessageShown = false;
+    let errorMessage = '';
+
+    vscode.workspace.openTextDocument = () => {
+      throw new Error('Mock file creation error');
+    };
+
+    vscode.window.showErrorMessage = (message: string) => {
+      errorMessageShown = true;
+      errorMessage = message;
+      return originalShowErrorMessage(message);
+    };
+
+    try {
+      await vscode.commands.executeCommand('quickmix.newScratchpad');
+
+      // Should show error message to user
+      assert.ok(errorMessageShown, 'Should display error message to user');
+      assert.ok(
+        errorMessage.includes('Failed to create scratchpad'),
+        'Error message should be descriptive'
+      );
+    } finally {
+      // Restore original functions
+      vscode.workspace.openTextDocument = originalOpenTextDocument;
+      vscode.window.showErrorMessage = originalShowErrorMessage;
+    }
+  });
+
+  test('quickmix.newScratchpad command should generate unique file names', async () => {
+    // Create multiple scratchpads quickly to test uniqueness
+    const fileNames = new Set<string>();
+    const promises = [];
+
+    // Create 3 scratchpads simultaneously to test timestamp uniqueness
+    for (let i = 0; i < 3; i++) {
+      promises.push(vscode.commands.executeCommand('quickmix.newScratchpad'));
+    }
+
+    await Promise.all(promises);
+
+    // Collect file names from all open documents
+    vscode.workspace.textDocuments.forEach(doc => {
+      if (doc.fileName.includes('quickmix-scratchpad')) {
+        fileNames.add(doc.fileName);
+      }
+    });
+
+    // Should have unique file names (at least as many as we created)
+    assert.ok(
+      fileNames.size >= 3,
+      `Should generate unique file names, got ${fileNames.size} unique names`
+    );
+  });
+
+  test('quickmix.newScratchpad command should create document with untitled scheme', async () => {
+    await vscode.commands.executeCommand('quickmix.newScratchpad');
+
+    const activeEditor = vscode.window.activeTextEditor;
+    assert.ok(activeEditor, 'Should have an active editor');
+
+    const document = activeEditor!.document;
+
+    // Verify the document is untitled (not saved to disk)
+    assert.ok(document.isUntitled, 'Document should be untitled');
+    assert.equal(document.languageId, 'php', 'Document should have PHP language ID');
+
+    // Verify the URI scheme
+    assert.equal(document.uri.scheme, 'untitled', 'Document URI should use untitled scheme');
+  });
 });
