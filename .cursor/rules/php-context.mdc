@@ -1,0 +1,56 @@
+---
+globs: "*.php"
+description: "PHP development context and best practices"
+---
+
+# PHP Development Context
+
+## PHP Environment Understanding
+QuickMix targets PHP developers who work with:
+- **Composer Dependencies**: Projects using vendor/autoload.php
+- **Modern PHP**: PHP 7.4+ with object-oriented practices
+- **Framework Usage**: Laravel, Symfony, or other Composer-based frameworks
+- **Docker Environments**: Containerized PHP applications
+
+## Common PHP Patterns to Support
+- **Autoloading**: PSR-4 autoloading via Composer
+- **Namespaces**: Modern PHP namespace usage
+- **Error Handling**: Exception-based error handling
+- **Object-Oriented Code**: Class-based architecture
+
+## PHP Execution Considerations
+- **Working Directory**: Must be project root for autoload to work
+- **Include Path**: Proper vendor/autoload.php inclusion
+- **Error Reporting**: Full error reporting for development
+- **Timeout Handling**: Prevent infinite loops in user code
+
+## Example PHP Code Patterns
+```php
+<?php
+// QuickMix should automatically include this
+require_once 'vendor/autoload.php';
+
+// Support for modern PHP features
+use App\Services\UserService;
+use Illuminate\Support\Collection;
+
+// Object-oriented code testing
+$userService = new UserService();
+$users = $userService->getActiveUsers();
+
+// Collection operations
+$activeUsers = collect($users)->filter(fn($user) => $user->isActive());
+echo $activeUsers->count();
+```
+
+## Error Handling Expectations
+- **Parse Errors**: Show line numbers and clear messages
+- **Runtime Errors**: Display full stack traces
+- **Fatal Errors**: Graceful handling without crashing extension
+- **Composer Errors**: Clear messages about missing dependencies
+
+## Performance Considerations
+- **Startup Time**: Autoload discovery should be cached
+- **Memory Usage**: Limit PHP memory for scratchpad execution
+- **Process Isolation**: Each execution should be independent
+- **File Cleanup**: Temporary files should be cleaned up automatically

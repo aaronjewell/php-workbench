@@ -1,0 +1,73 @@
+---
+globs: "*.md,src/**/*.ts,package.json,tsconfig.json"
+description: "Documentation standards and practices"
+---
+
+# Documentation Standards
+
+## Documentation Philosophy
+- Focus on **why** and **what**, not **how**
+- Document business logic and complex algorithms
+- Explain design decisions and trade-offs
+- Keep documentation concise and actionable
+
+## Code Documentation
+- Use JSDoc for public APIs and complex functions
+- Document function parameters, return values, and exceptions
+- Explain edge cases and assumptions
+- Include usage examples for complex APIs
+
+## Project Documentation
+Reference these key project files for context:
+- @../../README.md
+- @../../USER_STORIES.md
+- @../../package.json
+
+## README Requirements
+- Clear installation instructions
+- Usage examples with code snippets
+- Feature overview with screenshots
+- Development setup guide
+- Contributing guidelines
+
+## Inline Comments
+- Explain **why** code exists, not what it does
+- Document complex business logic
+- Explain non-obvious algorithms
+- Note important assumptions or constraints
+
+## Example Documentation Pattern
+```typescript
+/**
+ * Executes PHP code with Composer autoload integration
+ * 
+ * Why: Provides instant feedback for PHP development without 
+ * requiring manual file creation or terminal usage
+ * 
+ * @param code - PHP code string to execute
+ * @param workspacePath - Path to workspace for autoload detection
+ * @returns Promise resolving to execution result with output/errors
+ * @throws ExecutionError when PHP runtime is not available
+ */
+async function executePhpCode(code: string, workspacePath: string): Promise<ExecutionResult> {
+  // Check for Composer autoload first to provide full project context
+  const autoloadPath = await findComposerAutoload(workspacePath);
+  
+  // Execute with timeout to prevent infinite loops from freezing editor
+  return await runWithTimeout(code, autoloadPath);
+}
+```
+
+## Markdown Standards
+- Use clear headings and structure
+- Include code examples with proper syntax highlighting
+- Use bullet points for lists
+- Include links to related documentation
+- Keep paragraphs focused and concise
+
+## User-Facing Documentation
+- Write from user perspective
+- Include common use cases and workflows
+- Provide troubleshooting section
+- Use screenshots for complex UI interactions
+- Use screenshots for complex UI interactions

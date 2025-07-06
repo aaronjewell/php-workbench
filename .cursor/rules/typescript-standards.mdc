@@ -1,0 +1,64 @@
+---
+globs: "*.ts,*.tsx"
+description: "TypeScript coding standards and best practices"
+---
+
+# TypeScript Coding Standards
+
+## Service Class Template
+Follow this pattern for testable business logic:
+
+@templates/service-template.ts
+
+## Naming Conventions
+- Use **abstract method names** and **concrete class names**
+- Use PascalCase for classes, interfaces, and types
+- Use camelCase for functions, variables, and methods
+- Use UPPER_CASE for constants
+
+## Code Organization
+- Keep **side effects separate from business logic** for testability
+- Write **minimal methods, classes, and modules**
+- Avoid duplicate behavior or configuration
+- Each function should have a single responsibility
+
+## Architecture Principles
+- Use dependency injection for testable code
+- Separate pure business logic from side effects
+- Prefer composition over inheritance
+- Use explicit return types for public methods
+
+## Error Handling
+- Use Result/Either patterns for error handling where appropriate
+- Create custom error classes for domain-specific errors
+- Throw exceptions only for exceptional cases
+- Handle errors at the appropriate level
+
+## Code Quality Standards
+- Write code that is **testable, clear, expressive, and consistent**
+- Do not write more code than necessary to complete the task
+- Use type-safe patterns and avoid `any`
+- Prefer readonly properties and immutable data structures
+
+## Documentation Requirements
+- Always document written code, focusing on **the why and what, not the how**
+- Include JSDoc comments for public APIs
+- Explain business logic and complex algorithms
+- Document edge cases and assumptions
+
+## Example Structure
+```typescript
+/**
+ * Manages PHP code execution with proper error handling
+ * Why: Separates execution logic from UI concerns for testability
+ */
+export class CodeExecutor {
+  /**
+   * Executes PHP code and returns structured result
+   * What: Handles timeout, error capturing, and output formatting
+   */
+  async executeCode(code: string): Promise<ExecutionResult> {
+    // Implementation here
+  }
+}
+```

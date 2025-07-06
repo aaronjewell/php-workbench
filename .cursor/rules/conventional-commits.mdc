@@ -1,0 +1,89 @@
+# Conventional Commits
+
+## Commit Message Format
+```
+<type>(<scope>): <description>
+
+[optional body]
+
+[optional footer(s)]
+```
+
+## Commit Types
+- **feat**: New feature for the user
+- **fix**: Bug fix for the user  
+- **docs**: Documentation changes
+- **style**: Code style changes (formatting, semicolons, etc.)
+- **refactor**: Code refactoring without functional changes
+- **test**: Adding or updating tests
+- **chore**: Maintenance tasks, dependency updates
+- **build**: Changes to build system or dependencies
+- **ci**: Changes to CI configuration
+
+## Scope Guidelines
+Use scope to indicate the area of change:
+- **commands**: VSCode command implementations
+- **services**: Business logic services
+- **utils**: Utility functions
+- **tests**: Test files and testing infrastructure
+- **config**: Configuration files
+- **docs**: Documentation updates
+
+## Description Rules
+- Use imperative mood: "add feature" not "added feature"
+- Start with lowercase letter
+- No period at the end
+- Maximum 50 characters for the subject line
+- Be specific and descriptive
+
+## Examples
+
+### ✅ Good Commit Messages
+```
+feat(commands): add createScratchpad command with basic functionality
+fix(services): handle PHP execution timeout properly
+docs(readme): update installation instructions
+test(services): add unit tests for CodeExecutor class
+refactor(utils): extract file operations to separate module
+chore(deps): update @types/vscode to latest version
+```
+
+### ❌ Poor Commit Messages
+```
+❌ fix stuff
+❌ Added new feature
+❌ Update code
+❌ WIP
+❌ Fixed bug in the thing that was broken
+```
+
+## Integration with Incremental Delivery
+- **Each Action**: Commit after completing each logical action
+- **Each Step**: Consider tagging releases after completing full deliverable steps
+- **Breaking Changes**: Use `!` after type for breaking changes: `feat!: change API structure`
+- **Multiple Types**: If commit spans multiple types, break into smaller commits
+
+## Commit Body Guidelines
+Use the body to explain:
+- **Why** the change was made
+- **What** problem it solves
+- **How** it relates to requirements or user stories
+- Any important context or constraints
+
+## Example with Body
+```
+feat(services): add PHP code execution with Composer support
+
+Implements core requirement for instant PHP code execution.
+Automatically detects and includes vendor/autoload.php when present.
+Includes timeout protection to prevent infinite loops.
+
+Closes #42
+```
+
+## Release Integration
+- Use conventional commits to generate changelogs
+- Semantic versioning based on commit types:
+  - `feat`: minor version bump
+  - `fix`: patch version bump  
+  - `feat!` or `BREAKING CHANGE`: major version bump

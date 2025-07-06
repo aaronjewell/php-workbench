@@ -1,0 +1,60 @@
+---
+globs: "src/**/*.ts"
+description: "VSCode extension development guidelines"
+---
+
+# VSCode Extension Development Guidelines
+
+## Extension Structure
+Use this template for consistent extension structure:
+
+@templates/extension-template.ts
+
+## Command Registration
+- Command IDs must match package.json contributions
+- Use descriptive command names: `quickmix.createScratchpad` not `quickmix.create`
+- Register keyboard shortcuts in package.json contributions
+- Provide both command palette and keyboard access
+
+## VSCode API Usage
+- Use `vscode.window.showInformationMessage()` for user feedback
+- Use output channels for execution results: `vscode.window.createOutputChannel()`
+- Use `vscode.workspace.workspaceFolders` for project detection
+- Handle workspace changes with `vscode.workspace.onDidChangeWorkspaceFolders`
+
+## Error Handling
+- Use `vscode.window.showErrorMessage()` for user-facing errors
+- Log detailed errors to output channel or console
+- Handle cases where workspace is not available
+- Gracefully handle missing dependencies (PHP, Composer)
+
+## File Operations
+- Use `vscode.workspace.fs` for file system operations
+- Create temporary files in appropriate temp directories
+- Clean up temporary files on extension deactivation
+- Use `vscode.Uri` for file paths
+
+## Architecture Principles
+- Keep VSCode API interactions separate from business logic
+- Use dependency injection for testable services
+- Separate command handlers from business logic
+- Handle all errors gracefully with user-friendly messages
+
+## Example Command Registration
+```typescript
+export function activate(context: vscode.ExtensionContext) {
+  const disposable = vscode.commands.registerCommand(
+    'quickmix.createScratchpad',
+    createScratchpadHandler
+  );
+  context.subscriptions.push(disposable);
+}
+
+async function createScratchpadHandler(): Promise<void> {
+  try {
+    // Implementation with proper error handling
+  } catch (error) {
+    vscode.window.showErrorMessage(`Failed to create scratchpad: ${error.message}`);
+  }
+}
+```
