@@ -26,30 +26,6 @@ suite('Extension Test Suite', () => {
     );
   });
 
-  test('quickmix.newScratchpad command should execute successfully when triggered', async () => {
-    // Test that the command can be executed (this verifies the command
-    // registration that the keyboard shortcut depends on)
-    let commandExecuted = false;
-    const originalShowInformationMessage = vscode.window.showInformationMessage;
-
-    // Mock the showInformationMessage to capture command execution
-    vscode.window.showInformationMessage = (message: string) => {
-      if (message.includes('QuickMix')) {
-        commandExecuted = true;
-      }
-      return originalShowInformationMessage(message);
-    };
-
-    try {
-      await vscode.commands.executeCommand('quickmix.newScratchpad');
-
-      assert.ok(commandExecuted, 'Command should execute successfully when triggered');
-    } finally {
-      // Restore original function
-      vscode.window.showInformationMessage = originalShowInformationMessage;
-    }
-  });
-
   test('quickmix.newScratchpad command should be defined as keyboard shortcut in package.json', async () => {
     const keybindings = await extension.packageJSON.contributes.keybindings;
 
@@ -60,5 +36,26 @@ suite('Extension Test Suite', () => {
     assert.ok(quickmixKeybinding, 'Keyboard shortcut should be defined in package.json');
     assert.equal(quickmixKeybinding.key, 'ctrl+alt+n', 'Keyboard shortcut should be ctrl+alt+n');
     assert.equal(quickmixKeybinding.mac, 'cmd+alt+n', 'Keyboard shortcut should be cmd+alt+n');
+  });
+
+  test('quickmix.newScratchpad command should create a temporary PHP file', async () => {
+    const initialDocuments = vscode.workspace.textDocuments.length;
+
+    await vscode.commands.executeCommand('quickmix.newScratchpad');
+
+    // Should have one more document open
+    assert.ok(
+      vscode.workspace.textDocuments.length > initialDocuments,
+      'Should create a new document'
+    );
+
+    // The new document should be a PHP file
+    const activeEditor = vscode.window.activeTextEditor;
+    assert.ok(activeEditor, 'Should have an active editor');
+    assert.ok(activeEditor!.document.languageId === 'php', 'Created document should be a PHP file');
+    assert.ok(
+      activeEditor!.document.fileName.endsWith('.php'),
+      'Created file should have .php extension'
+    );
   });
 });
