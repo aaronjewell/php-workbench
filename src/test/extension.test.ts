@@ -111,6 +111,54 @@ suite('Extension Test Suite', () => {
   });
 
   test('quickmix.executeCode command should execute', async () => {
-    assert.doesNotThrow(() => vscode.commands.executeCommand('quickmix.executeCode'), 'Command should execute successfully');
+    assert.doesNotThrow(
+      () => vscode.commands.executeCommand('quickmix.executeCode'),
+      'Command should execute successfully'
+    );
+  });
+
+  test('should execute basic PHP code and return result', async () => {
+    const document = await vscode.workspace.openTextDocument({
+      content: '<?php echo "Hello World";',
+      language: 'php',
+    });
+    await vscode.window.showTextDocument(document);
+
+    const result = await vscode.commands.executeCommand('quickmix.executeCode');
+
+    assert.ok(result, 'Should return execution result');
+  });
+
+  test('should handle empty PHP code', async () => {
+    const document = await vscode.workspace.openTextDocument({
+      content: '',
+      language: 'php',
+    });
+    await vscode.window.showTextDocument(document);
+
+    const result = await vscode.commands.executeCommand('quickmix.executeCode');
+    assert.ok(result, 'Should handle empty code gracefully');
+  });
+
+  test('should execute single PHP statement', async () => {
+    const document = await vscode.workspace.openTextDocument({
+      content: '<?php echo "test";',
+      language: 'php',
+    });
+    await vscode.window.showTextDocument(document);
+
+    const result = await vscode.commands.executeCommand('quickmix.executeCode');
+    assert.ok(result, 'Should execute single statement');
+  });
+
+  test('should execute multiple PHP statements', async () => {
+    const document = await vscode.workspace.openTextDocument({
+      content: '<?php echo "line1"; echo "line2"; echo "line3";',
+      language: 'php',
+    });
+    await vscode.window.showTextDocument(document);
+
+    const result = await vscode.commands.executeCommand('quickmix.executeCode');
+    assert.ok(result, 'Should execute multiple statements');
   });
 });

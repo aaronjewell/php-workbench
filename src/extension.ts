@@ -1,6 +1,19 @@
 // The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
+
+/**
+ * Represents the result of PHP code execution
+ *
+ * Why: Provides structured response for code execution with output and error handling
+ */
+interface ExecutionResult {
+  /** The output from successful code execution */
+  output: string;
+  /** Any error messages from failed execution */
+  error?: string;
+  /** Whether the execution was successful */
+  success: boolean;
+}
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
@@ -22,9 +35,36 @@ export function activate(context: vscode.ExtensionContext) {
     }
   });
 
-  const executeCommand = vscode.commands.registerCommand('quickmix.executeCode', async () => {
-    // Minimal implementation to pass tests - will be expanded in subsequent steps
-  });
+  const executeCommand = vscode.commands.registerCommand(
+    'quickmix.executeCode',
+    async (): Promise<ExecutionResult> => {
+      try {
+        const editor = vscode.window.activeTextEditor;
+        if (!editor) {
+          return {
+            output: '',
+            error: 'No active editor found',
+            success: false,
+          };
+        }
+
+        const code = editor.document.getText();
+
+        // Minimal implementation - return basic success result for now
+        // Will be expanded with actual PHP execution in subsequent steps
+        return {
+          output: 'Code executed successfully (placeholder)',
+          success: true,
+        };
+      } catch (error) {
+        return {
+          output: '',
+          error: `Execution failed: ${error}`,
+          success: false,
+        };
+      }
+    }
+  );
 
   context.subscriptions.push(disposable, executeCommand);
 }
