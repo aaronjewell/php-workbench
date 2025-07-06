@@ -4,6 +4,9 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import * as os from 'os';
 
+// Counter for auto-incrementing scratchpad filenames
+let scratchpadCounter = 0;
+
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
@@ -16,11 +19,10 @@ export function activate(context: vscode.ExtensionContext) {
   // The commandId parameter must match the command field in package.json
   const disposable = vscode.commands.registerCommand('quickmix.newScratchpad', async () => {
     try {
-      // Create a temporary PHP file with unique timestamp and random component
+      // Create a temporary PHP file with simple auto-incrementing naming
       const tempDir = os.tmpdir();
-      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-      const randomSuffix = Math.random().toString(36).substring(2, 8);
-      const fileName = `quickmix-scratchpad-${timestamp}-${randomSuffix}.php`;
+      scratchpadCounter++;
+      const fileName = `quickmix-scratchpad-${scratchpadCounter}.php`;
       const filePath = path.join(tempDir, fileName);
 
       // Create and open the document

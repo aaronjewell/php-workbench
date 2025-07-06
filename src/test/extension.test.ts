@@ -97,16 +97,17 @@ suite('Extension Test Suite', () => {
     const fileNames = new Set<string>();
     const promises = [];
 
-    // Create 3 scratchpads simultaneously to test timestamp uniqueness
+    // Create 3 scratchpads simultaneously to test counter uniqueness
     for (let i = 0; i < 3; i++) {
       promises.push(vscode.commands.executeCommand('quickmix.newScratchpad'));
     }
 
     await Promise.all(promises);
 
-    // Collect file names from all open documents
+    // Collect file names from all open documents (filter for only our new simple format)
     vscode.workspace.textDocuments.forEach(doc => {
-      if (doc.fileName.includes('quickmix-scratchpad')) {
+      const simpleNamePattern = /quickmix-scratchpad-\d+\.php$/;
+      if (simpleNamePattern.test(doc.fileName)) {
         fileNames.add(doc.fileName);
       }
     });
@@ -114,7 +115,7 @@ suite('Extension Test Suite', () => {
     // Should have unique file names (at least as many as we created)
     assert.ok(
       fileNames.size >= 3,
-      `Should generate unique file names, got ${fileNames.size} unique names`
+      `Should generate unique file names with simple format, got ${fileNames.size} unique names`
     );
   });
 
@@ -132,5 +133,29 @@ suite('Extension Test Suite', () => {
 
     // Verify the URI scheme
     assert.equal(document.uri.scheme, 'untitled', 'Document URI should use untitled scheme');
+  });
+
+  test('quickmix.newScratchpad command should use simple auto-incrementing filenames', async () => {
+    // Create a scratchpad and check the filename format
+    await vscode.commands.executeCommand('quickmix.newScratchpad');
+
+    const activeEditor = vscode.window.activeTextEditor;
+    assert.ok(activeEditor, 'Should have an active editor');
+
+    const fullPath = activeEditor!.document.fileName;
+    const fileName = fullPath.split('/').pop() || fullPath.split('\\').pop() || fullPath;
+
+    // Should match pattern: quickmix-scratchpad-{number}.php
+    const simpleNamePattern = /quickmix-scratchpad-\d+\.php$/;
+    assert.ok(
+      simpleNamePattern.test(fileName),
+      `Filename should use simple auto-incrementing format, got: ${fileName}`
+    );
+
+    // Should not contain timestamps or random strings (check filename only, not path)
+    assert.ok(
+      !fileName.includes('T') && !fileName.includes('Z'),
+      `Filename should not contain timestamp characters, got: ${fileName}`
+    );
   });
 });
