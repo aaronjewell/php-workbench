@@ -17,6 +17,13 @@
         "command": "quickmix.newScratchpad",
         "title": "QuickMix: New Scratchpad"
       }
+    ],
+    "keybindings": [
+      {
+        "command": "quickmix.newScratchpad",
+        "key": "ctrl+alt+n",
+        "mac": "cmd+alt+n"
+      }
     ]
   },
   "scripts": {
