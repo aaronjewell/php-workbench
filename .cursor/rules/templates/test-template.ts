@@ -2,7 +2,7 @@ import * as assert from 'assert';
 import { ServiceTemplate, OperationInput, DependencyInterface } from '../services/ServiceTemplate';
 
 /**
- * Test template following TDD practices
+ * Test template following our testing standards
  * Structure: Arrange-Act-Assert pattern
  */
 describe('ServiceTemplate', () => {

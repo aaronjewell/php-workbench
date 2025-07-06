@@ -15,6 +15,7 @@ A **step** is a set of actions that takes the codebase from one deliverable stat
 - **Deliverable State**: Code can be released at any point (proper quality and correctness)
 - **Non-Regression**: Cannot make the extension worse than the previous state
 - **Minimal Size**: As small as reasonably possible given the nature of the change
+- **Test-Driven**: Follow @test-driven-development.mdc for zero-one-many approach and @testing-standards.mdc for implementation
 - **Complete**: Must pass `vscode:prepublish` npm script before considering step complete
 
 ### Step Characteristics
@@ -65,11 +66,17 @@ Action 4: Add basic JSDoc documentation
 ❌ Add multiple unrelated features in one action
 ```
 
+## Test-Driven Development Requirements
+- **MUST write tests before adding or modifying any code**
+- **MUST validate tests pass after implementation** 
+- **NEVER write business logic without first writing the test**
+- Use Red-Green-Refactor cycle: failing test → minimal code → refactor
+
 ## Completion Criteria
 Every step must satisfy:
 
 1. **Build Success**: `npm run vscode:prepublish` completes without errors
-2. **Test Passing**: All existing tests continue to pass
+2. **Test Passing**: All existing tests continue to pass, new tests written and passing
 3. **Code Quality**: Meets linting and formatting standards
 4. **Functionality**: No regression in existing features
 5. **Documentation**: Updated if public APIs changed

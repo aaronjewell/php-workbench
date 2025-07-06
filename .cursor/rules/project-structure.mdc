@@ -27,7 +27,7 @@ QuickMix is a VSCode extension that enables PHP developers to quickly test code 
 5. **Output Panel**: Dedicated QuickMix output channel
 
 ## Development Workflow
-1. Write tests first (TDD approach)
+1. Write tests first
 2. Implement minimal code to pass tests
 3. Refactor while keeping tests green
 4. Document why and what, not how

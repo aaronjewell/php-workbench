@@ -1,15 +1,9 @@
 ---
+description: "Technical testing implementation standards"
 globs: "src/**/*.test.ts,src/**/*.spec.ts"
-description: "Testing standards and TDD practices"
 ---
 
-# Testing Standards and TDD Practices
-
-## Test-Driven Development
-- **Write tests before writing code** - this is mandatory
-- Write business logic that can be unit tested separately from VSCode APIs
-- Red-Green-Refactor cycle: failing test → minimal code → refactor
-- Do not write business logic without first writing the test
+# Testing Implementation Standards
 
 ## Test Structure Template
 Follow this pattern for consistent, thorough tests:

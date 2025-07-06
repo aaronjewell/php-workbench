@@ -36,6 +36,8 @@ Use scope to indicate the area of change:
 - Maximum 50 characters for the subject line
 - Be specific and descriptive
 - **Describe only actual changes made**, not abstract outcomes or future promises
+- **Focus on WHAT changed, not HOW you worked or design paradigms followed**
+- Avoid references to development methodologies, practices, or workflows
 - Use a concise style
 
 ## Examples
@@ -60,6 +62,10 @@ chore(deps): update @types/vscode to latest version
 ❌ Enforce consistent formatting in CI/publishing pipeline
 ❌ Ensure code quality across the project
 ❌ Implement robust error handling
+❌ Apply TDD principles to command implementation
+❌ Follow incremental delivery workflow for feature addition
+❌ Use zero-one-many testing approach
+❌ Implement clean architecture patterns
 ```
 
 ### ✅ Better: Describe Actual Changes
@@ -67,6 +73,9 @@ chore(deps): update @types/vscode to latest version
 ✅ add format:check to vscode:prepublish script
 ✅ install prettier and add formatting configuration  
 ✅ add try-catch blocks to executeCode method
+✅ add quickmix.newScratchpad command registration
+✅ create CodeExecutor class with execute method
+✅ add timeout parameter to PHP execution
 ```
 
 ## Integration with Incremental Delivery
@@ -82,6 +91,7 @@ Use the body to explain:
 - **How** it relates to requirements or user stories
 - Any important context or constraints
 - **Focus on concrete changes made**, not abstract benefits or future goals
+- **Avoid mentioning development practices, methodologies, or workflow approaches**
 - Use a concise style
 
 ## Example with Body
