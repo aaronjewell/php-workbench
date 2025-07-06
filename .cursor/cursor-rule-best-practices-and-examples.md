@@ -12,11 +12,11 @@ Rules apply to Chat and Inline Edit. Active rules show in the Agent sidebar.
 
 Rules are written in **MDC** (`.mdc`) format with frontmatter metadata that controls how they're applied:
 
-| Rule Type       | Frontmatter | Description                                                                      |
-| --------------- | ----------- | -------------------------------------------------------------------------------- |
-| Always          | `alwaysApply: true` | Always included in model context                                     |
-| Auto Attached   | `globs: "*.ts,*.tsx"` | Included when files matching a glob pattern are referenced       |
-| Agent Requested | `description: "..."` | Available to AI, which decides whether to include it. Must provide a description |
+| Rule Type       | Frontmatter           | Description                                                                      |
+| --------------- | --------------------- | -------------------------------------------------------------------------------- |
+| Always          | `alwaysApply: true`   | Always included in model context                                                 |
+| Auto Attached   | `globs: "*.ts,*.tsx"` | Included when files matching a glob pattern are referenced                       |
+| Agent Requested | `description: "..."`  | Available to AI, which decides whether to include it. Must provide a description |
 | Manual          | No special properties | Only included when explicitly mentioned using @ruleName                          |
 
 ### Rule Anatomy Example
@@ -24,7 +24,7 @@ Rules are written in **MDC** (`.mdc`) format with frontmatter metadata that cont
 ```md
 ---
 description: RPC Service boilerplate
-globs: "src/**/*.ts"
+globs: 'src/**/*.ts'
 alwaysApply: false
 ---
 
@@ -44,6 +44,7 @@ description: React component template
 ---
 
 React components should follow this layout:
+
 - Props interface at top
 - Component as named export
 - Styles at bottom
@@ -80,26 +81,30 @@ Good rules are focused, actionable, and scoped.
 ### Standards for Frontend Components and API Validation
 
 **Frontend Components Rule:**
+
 ```md
 ---
-globs: "src/components/**/*.tsx"
-description: "Frontend component standards"
+globs: 'src/components/**/*.tsx'
+description: 'Frontend component standards'
 ---
 
 When working in components directory:
+
 - Always use Tailwind for styling
 - Use Framer Motion for animations
 - Follow component naming conventions
 ```
 
 **API Validation Rule:**
+
 ```md
 ---
-globs: "src/api/**/*.ts"
-description: "API endpoint validation standards"
+globs: 'src/api/**/*.ts'
+description: 'API endpoint validation standards'
 ---
 
 In API directory:
+
 - Use zod for all validation
 - Define return types with zod schemas
 - Export types generated from schemas
@@ -108,12 +113,14 @@ In API directory:
 ### Templates for Express Services and React Components
 
 **Express Service Template:**
+
 ```md
 ---
-description: "Express service template"
+description: 'Express service template'
 ---
 
 Use this template when creating Express service:
+
 - Follow RESTful principles
 - Include error handling middleware
 - Set up proper logging
@@ -122,12 +129,14 @@ Use this template when creating Express service:
 ```
 
 **React Component Template:**
+
 ```md
 ---
-description: "React component structure"
+description: 'React component structure'
 ---
 
 React components should follow this layout:
+
 - Props interface at top
 - Component as named export
 - Styles at bottom
@@ -138,24 +147,28 @@ React components should follow this layout:
 ### Automating Development Workflows and Documentation Generation
 
 **App Analysis Automation:**
+
 ```md
 ---
-description: "Automated app analysis workflow"
+description: 'Automated app analysis workflow'
 ---
 
 When asked to analyze the app:
+
 1. Run dev server with `npm run dev`
 2. Fetch logs from console
 3. Suggest performance improvements
 ```
 
 **Documentation Generation:**
+
 ```md
 ---
-description: "Documentation generation helper"
+description: 'Documentation generation helper'
 ---
 
 Help draft documentation by:
+
 - Extracting code comments
 - Analyzing README.md
 - Generating markdown documentation
@@ -165,22 +178,23 @@ Help draft documentation by:
 
 ```md
 ---
-globs: "src/**/*.tsx,src/**/*.ts"
-description: "Tailwind usage standards"
+globs: 'src/**/*.tsx,src/**/*.ts'
+description: 'Tailwind usage standards'
 ---
 
 Tailwind is supported in this VS Code fork!
 
 Usage examples:
+
 - `text-error-foreground`
 - `bg-input-border`
 ```
 
 ### Adding a New Setting in Cursor
 
-```md
+````md
 ---
-description: "Cursor settings implementation guide"
+description: 'Cursor settings implementation guide'
 ---
 
 First create a property to toggle in `@reactiveStorageTypes.ts`.
@@ -191,26 +205,23 @@ For beta features, add toggle in `@settingsBetaTab.tsx`, otherwise add in `@sett
 
 ```tsx
 <SettingsSubSection
-	label="Your feature name"
-	description="Your feature description"
-	value={
-		vsContext.reactiveStorageService.applicationUserPersistentStorage
-			.myNewProperty ?? false
-	}
-	onChange={(newVal) => {
-		vsContext.reactiveStorageService.setApplicationUserPersistentStorage(
-			'myNewProperty',
-			newVal
-		);
-	}}
+  label="Your feature name"
+  description="Your feature description"
+  value={vsContext.reactiveStorageService.applicationUserPersistentStorage.myNewProperty ?? false}
+  onChange={newVal => {
+    vsContext.reactiveStorageService.setApplicationUserPersistentStorage('myNewProperty', newVal);
+  }}
 />
 ```
+````
 
 To use in the app, import reactiveStorageService and use the property:
 
 ```js
-const flagIsEnabled = vsContext.reactiveStorageService.applicationUserPersistentStorage.myNewProperty
+const flagIsEnabled =
+  vsContext.reactiveStorageService.applicationUserPersistentStorage.myNewProperty;
 ```
+
 ```
 
 ## FAQ
@@ -237,5 +248,9 @@ No. Rules only apply to Agent and Inline Edit.
 - **User Rules**: Global preferences defined in **Cursor Settings → Rules** that apply across all projects. Plain text format perfect for communication style or coding conventions:
 
 ```
+
 Please reply in a concise style. Avoid unnecessary repetition or filler language.
+
+```
+
 ```

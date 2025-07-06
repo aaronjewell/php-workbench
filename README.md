@@ -7,23 +7,27 @@ Perfect for experimenting with APIs, testing functions, or trying out new packag
 ## Features
 
 ### 🚀 **Instant PHP Execution**
+
 - Execute PHP code snippets with `Ctrl+Enter` (or `Cmd+Enter`)
 - See results immediately in VS Code's output panel
 - Full error handling with line numbers and stack traces
 - No need for `<?php` tags - just write PHP code
 
 ### 📦 **Project Context**
-- Automatically includes your project's `vendor/autoload.php` 
+
+- Automatically includes your project's `vendor/autoload.php`
 - Full access to your Composer dependencies
 - Works with any PHP project structure
 - Maintains your project's environment and configuration
 
 ### 🐳 **Docker Support**
+
 - Run code in your Docker containers
 - Simple configuration for Docker Compose projects
 - Seamless integration with containerized PHP environments
 
 ### 📝 **Smart Scratchpad Management**
+
 - Create temporary PHP files that auto-save as you type
 - Automatic cleanup of temporary files
 - Full VS Code features: syntax highlighting, IntelliSense, debugging
@@ -81,7 +85,7 @@ For Docker Compose projects, add this to your VS Code settings:
 
 ```json
 {
-    "quickmix.docker.service": "app"
+  "quickmix.docker.service": "app"
 }
 ```
 
@@ -101,14 +105,15 @@ For Docker projects, specify your PHP service name from `docker-compose.yml`.
 
 ## Keyboard Shortcuts
 
-| Shortcut | Action |
-|----------|--------|
+| Shortcut                   | Action                   |
+| -------------------------- | ------------------------ |
 | `Ctrl+Enter` / `Cmd+Enter` | Execute current PHP code |
-| `Ctrl+Alt+N` / `Cmd+Alt+N` | New PHP scratchpad |
+| `Ctrl+Alt+N` / `Cmd+Alt+N` | New PHP scratchpad       |
 
 ## Use Cases
 
 Perfect for:
+
 - **Testing new packages** - Try out Composer packages before committing to them
 - **API exploration** - Test API calls and responses quickly
 - **Function debugging** - Isolate and test problematic functions
@@ -118,6 +123,7 @@ Perfect for:
 ## Examples
 
 ### Testing Composer Packages
+
 ```php
 use Carbon\Carbon;
 
@@ -130,6 +136,7 @@ echo $tomorrow->diffForHumans();
 ```
 
 ### API Testing
+
 ```php
 $response = file_get_contents('https://api.github.com/users/octocat');
 $data = json_decode($response, true);
@@ -139,6 +146,7 @@ echo "Public repos: " . $data['public_repos'];
 ```
 
 ### Quick Function Testing
+
 ```php
 function calculateTotal($items) {
     return array_sum(array_column($items, 'price'));
@@ -161,14 +169,17 @@ echo "Total: $" . calculateTotal($items);
 ## Troubleshooting
 
 **Code not executing:**
+
 - Check if PHP is installed: `php --version`
 - For Docker projects: Ensure containers are running
 
 **Composer dependencies not available:**
+
 - Run `composer install` in your project root
 - Check if `vendor/autoload.php` exists (must be in workspace root)
 
 **Docker issues:**
+
 - Ensure containers are running: `docker-compose ps`
 - Set the correct service name in settings: `"quickmix.docker.service": "your-service-name"`
 
@@ -188,6 +199,7 @@ Initial release of QuickMix
 ## Contributing
 
 We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details on how to:
+
 - Report bugs
 - Suggest new features
 - Submit pull requests
@@ -207,4 +219,4 @@ This extension is licensed under the [MIT License](LICENSE).
 
 **Happy PHP Coding!** 🐘
 
-*QuickMix: Test PHP code instantly within your project context.* 
+_QuickMix: Test PHP code instantly within your project context._
