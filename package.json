@@ -14,8 +14,8 @@
   "contributes": {
     "commands": [
       {
-        "command": "quickmix.helloWorld",
-        "title": "Hello World"
+        "command": "quickmix.newScratchpad",
+        "title": "QuickMix: New Scratchpad"
       }
     ]
   },
