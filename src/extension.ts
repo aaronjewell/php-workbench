@@ -1,39 +1,24 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
-import * as path from 'path';
-import * as os from 'os';
-
-// Counter for auto-incrementing scratchpad filenames
-let scratchpadCounter = 0;
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
   // Use the console to output diagnostic information (console.log) and errors (console.error)
   // This line of code will only be executed once when your extension is activated
-  console.log('Congratulations, your extension "quickmix" is now active!');
+  // console.log('Congratulations, your extension "quickmix" is now active!');
 
   // The command has been defined in the package.json file
   // Now provide the implementation of the command with registerCommand
   // The commandId parameter must match the command field in package.json
   const disposable = vscode.commands.registerCommand('quickmix.newScratchpad', async () => {
     try {
-      // Create a temporary PHP file with simple auto-incrementing naming
-      const tempDir = os.tmpdir();
-      scratchpadCounter++;
-      const fileName = `quickmix-scratchpad-${scratchpadCounter}.php`;
-      const filePath = path.join(tempDir, fileName);
-
-      // Create and open the document
-      const document = await vscode.workspace.openTextDocument(
-        vscode.Uri.file(filePath).with({ scheme: 'untitled' })
-      );
-
-      // Show the document in the editor
-      await vscode.window.showTextDocument(document);
+      await vscode.commands.executeCommand('workbench.action.files.newUntitledFile', {
+        languageId: 'php',
+      });
     } catch (error) {
-      vscode.window.showErrorMessage(`Failed to create scratchpad: ${error}`);
+      await vscode.window.showErrorMessage(`Failed to create scratchpad: ${error}`);
     }
   });
 
