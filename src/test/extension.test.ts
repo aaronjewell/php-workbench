@@ -92,31 +92,32 @@ suite('Extension Test Suite', () => {
     }
   });
 
-  test('quickmix.newScratchpad command should generate unique file names', async () => {
-    // Create multiple scratchpads quickly to test uniqueness
-    const fileNames = new Set<string>();
-    const promises = [];
+  test('quickmix.newScratchpad command should generate auto-incrementing unique filenames', async () => {
+    const actualFilenames: string[] = [];
 
-    // Create 3 scratchpads simultaneously to test counter uniqueness
+    // Create 3 scratchpads and collect their filenames
     for (let i = 0; i < 3; i++) {
-      promises.push(vscode.commands.executeCommand('quickmix.newScratchpad'));
+      await vscode.commands.executeCommand('quickmix.newScratchpad');
+
+      const activeEditor = vscode.window.activeTextEditor;
+      assert.ok(activeEditor, `Should have active editor for file ${i + 1}`);
+
+      const fullPath = activeEditor!.document.fileName;
+      const fileName = fullPath.split('/').pop() || fullPath.split('\\').pop() || fullPath;
+      actualFilenames.push(fileName);
     }
 
-    await Promise.all(promises);
-
-    // Collect file names from all open documents (filter for only our new simple format)
-    vscode.workspace.textDocuments.forEach(doc => {
-      const simpleNamePattern = /quickmix-scratchpad-\d+\.php$/;
-      if (simpleNamePattern.test(doc.fileName)) {
-        fileNames.add(doc.fileName);
-      }
+    // Extract numbers from filenames to verify auto-incrementing
+    const numbers = actualFilenames.map(filename => {
+      const match = filename.match(/^quickmix-scratchpad-(\d+)\.php$/);
+      assert.ok(match, `Filename should match pattern: ${filename}`);
+      return parseInt(match![1], 10);
     });
 
-    // Should have unique file names (at least as many as we created)
-    assert.ok(
-      fileNames.size >= 3,
-      `Should generate unique file names with simple format, got ${fileNames.size} unique names`
-    );
+    // Verify we got 3 consecutive auto-incrementing numbers
+    assert.equal(numbers.length, 3, 'Should have 3 filenames');
+    assert.equal(numbers[1], numbers[0] + 1, 'Second file should increment by 1');
+    assert.equal(numbers[2], numbers[1] + 1, 'Third file should increment by 1');
   });
 
   test('quickmix.newScratchpad command should create document with untitled scheme', async () => {
@@ -133,29 +134,5 @@ suite('Extension Test Suite', () => {
 
     // Verify the URI scheme
     assert.equal(document.uri.scheme, 'untitled', 'Document URI should use untitled scheme');
-  });
-
-  test('quickmix.newScratchpad command should use simple auto-incrementing filenames', async () => {
-    // Create a scratchpad and check the filename format
-    await vscode.commands.executeCommand('quickmix.newScratchpad');
-
-    const activeEditor = vscode.window.activeTextEditor;
-    assert.ok(activeEditor, 'Should have an active editor');
-
-    const fullPath = activeEditor!.document.fileName;
-    const fileName = fullPath.split('/').pop() || fullPath.split('\\').pop() || fullPath;
-
-    // Should match pattern: quickmix-scratchpad-{number}.php
-    const simpleNamePattern = /quickmix-scratchpad-\d+\.php$/;
-    assert.ok(
-      simpleNamePattern.test(fileName),
-      `Filename should use simple auto-incrementing format, got: ${fileName}`
-    );
-
-    // Should not contain timestamps or random strings (check filename only, not path)
-    assert.ok(
-      !fileName.includes('T') && !fileName.includes('Z'),
-      `Filename should not contain timestamp characters, got: ${fileName}`
-    );
   });
 });
