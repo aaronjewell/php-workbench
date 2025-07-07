@@ -165,18 +165,6 @@ suite('Extension Test Suite', () => {
     assert.ok(!result.error, 'Result should not contain error');
   });
 
-  test('should execute single PHP statement', async () => {
-    const document = await vscode.workspace.openTextDocument({
-      content: '<?php echo "test";',
-      language: 'php',
-    });
-    await vscode.window.showTextDocument(document);
-
-    const result = (await vscode.commands.executeCommand('quickmix.executeCode')) as any;
-    assert.ok(result.success, 'Execution should be successful');
-    assert.ok(result.output.includes('test'), 'Result should contain output');
-  });
-
   test('should execute multiple PHP statements', async () => {
     const document = await vscode.workspace.openTextDocument({
       content: '<?php echo "line1"; echo "line2"; echo "line3";',
@@ -217,34 +205,107 @@ suite('Extension Test Suite', () => {
     assert.ok(result.output.includes('No opening tag'), 'Result should contain output');
   });
 
-  test('should execute code and display results', async () => {
-    const document = await vscode.workspace.openTextDocument({
-      content: '<?php echo "Hello World";',
+  // Tests for multiline content with different line ending variations
+  test('should execute multiline PHP with various line endings', async () => {
+    // Test Unix line endings (\n)
+    const unixDocument = await vscode.workspace.openTextDocument({
+      content: '<?php\necho "unix1";\necho "unix2";',
       language: 'php',
     });
-    await vscode.window.showTextDocument(document);
+    await vscode.window.showTextDocument(unixDocument);
+    const unixResult =
+      await vscode.commands.executeCommand<ExecutionResult>('quickmix.executeCode');
+    assert.ok(unixResult.success, 'Should execute with Unix line endings');
+    assert.ok(unixResult.output.includes('unix1'), 'Should handle Unix line endings');
 
-    const result = await vscode.commands.executeCommand<ExecutionResult>('quickmix.executeCode');
+    // Test Windows line endings (\r\n)
+    const windowsDocument = await vscode.workspace.openTextDocument({
+      content: '<?php\r\necho "windows1";\r\necho "windows2";',
+      language: 'php',
+    });
+    await vscode.window.showTextDocument(windowsDocument);
+    const windowsResult =
+      await vscode.commands.executeCommand<ExecutionResult>('quickmix.executeCode');
+    assert.ok(windowsResult.success, 'Should execute with Windows line endings');
+    assert.ok(windowsResult.output.includes('windows1'), 'Should handle Windows line endings');
 
-    assert.ok(result.success, 'Execution should be successful');
-    assert.ok(result.output.includes('Hello World'), 'Should contain expected output');
-    // Note: The output panel display is tested through integration -
-    // the command should complete successfully and user will see results in UI
+    // Test old Mac line endings (\r)
+    const macDocument = await vscode.workspace.openTextDocument({
+      content: '<?php\recho "mac1";\recho "mac2";',
+      language: 'php',
+    });
+    await vscode.window.showTextDocument(macDocument);
+    const macResult = await vscode.commands.executeCommand<ExecutionResult>('quickmix.executeCode');
+    assert.ok(macResult.success, 'Should execute with old Mac line endings');
+    assert.ok(macResult.output.includes('mac1'), 'Should handle old Mac line endings');
   });
 
-  test('should execute code with errors and handle gracefully', async () => {
+  test('should execute complex multiline PHP with mixed statements', async () => {
     const document = await vscode.workspace.openTextDocument({
-      content: '<?php echo "unclosed string;',
+      content: `<?php
+$name = "QuickMix";
+$version = "1.0";
+echo "Extension: " . $name;
+echo "Version: " . $version;
+for ($i = 1; $i <= 3; $i++) {
+    echo "Iteration: " . $i;
+}`,
       language: 'php',
     });
     await vscode.window.showTextDocument(document);
 
     const result = await vscode.commands.executeCommand<ExecutionResult>('quickmix.executeCode');
 
-    assert.strictEqual(result.success, false, 'Should handle syntax errors');
-    assert.ok(result.error, 'Should provide error information');
-    // Note: Error display in output panel is tested through integration -
-    // the command should complete and user will see error in UI
+    assert.ok(
+      result.success,
+      `Should execute complex multiline PHP code, but failed with error: ${result.error}`
+    );
+    assert.ok(result.output.includes('Extension: QuickMix'), 'Should contain extension output');
+    assert.ok(result.output.includes('Version: 1.0'), 'Should contain version output');
+    assert.ok(result.output.includes('Iteration: 1'), 'Should contain loop iteration 1');
+    assert.ok(result.output.includes('Iteration: 2'), 'Should contain loop iteration 2');
+    assert.ok(result.output.includes('Iteration: 3'), 'Should contain loop iteration 3');
+  });
+
+  test('should handle multiline PHP with syntax errors', async () => {
+    const document = await vscode.workspace.openTextDocument({
+      content: `<?php
+echo "line1";
+echo "unclosed string
+echo "line3";`,
+      language: 'php',
+    });
+    await vscode.window.showTextDocument(document);
+
+    const result = await vscode.commands.executeCommand<ExecutionResult>('quickmix.executeCode');
+
+    assert.strictEqual(result.success, false, 'Should fail on multiline syntax error');
+    assert.ok(result.error, 'Should contain error message for multiline syntax error');
+  });
+
+  test('should execute PHP with complex string content and special characters', async () => {
+    const document = await vscode.workspace.openTextDocument({
+      content: `<?php
+echo "String with 'single quotes' and \\"double quotes\\"";
+echo 'String with "double quotes" and \\'single quotes\\'';
+echo "Multiline string with
+actual line breaks";
+$variable = "interpolation";
+echo "Dollar signs and \$variable contains: " . $variable;`,
+      language: 'php',
+    });
+    await vscode.window.showTextDocument(document);
+
+    const result = await vscode.commands.executeCommand<ExecutionResult>('quickmix.executeCode');
+
+    assert.ok(
+      result.success,
+      `Should execute complex string content, but failed with error: ${result.error}`
+    );
+    assert.ok(result.output.includes('single quotes'), 'Should handle mixed quote types');
+    assert.ok(result.output.includes('double quotes'), 'Should handle escaped quotes');
+    assert.ok(result.output.includes('Dollar signs'), 'Should handle dollar signs');
+    assert.ok(result.output.includes('interpolation'), 'Should handle variable content');
   });
 
   test('should handle execution when no active editor', async () => {
