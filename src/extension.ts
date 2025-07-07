@@ -1,6 +1,8 @@
 // The module 'vscode' contains the VS Code extensibility API
 import * as vscode from 'vscode';
 import { spawn } from 'child_process';
+import * as path from 'path';
+import * as fs from 'fs';
 
 // Global output channel for displaying results
 let outputChannel: vscode.OutputChannel;
@@ -15,6 +17,63 @@ export interface ExecutionResult {
   error?: string;
   /** Whether the execution was successful */
   success: boolean;
+}
+
+/**
+ * Manages PsySH .phar file operations
+ */
+export interface PsyShManager {
+  /** Get the path to the PsySH .phar file */
+  getPsyShPath(): Promise<string>;
+  /** Check if PsySH .phar file exists */
+  psyShExists(): Promise<boolean>;
+  /** Download PsySH .phar file if needed */
+  ensurePsyShAvailable(): Promise<string>;
+}
+
+/**
+ * Implementation of PsySH .phar file management
+ */
+export class PsyShManagerImpl implements PsyShManager {
+  private readonly context: vscode.ExtensionContext;
+
+  constructor(context: vscode.ExtensionContext) {
+    this.context = context;
+  }
+
+  async getPsyShPath(): Promise<string> {
+    const config = vscode.workspace.getConfiguration('quickmix');
+    const customPath = config.get<string>('psyshPath');
+
+    if (customPath && customPath.trim()) {
+      return customPath.trim();
+    }
+
+    // Default to extension storage path
+    return path.join(this.context.globalStorageUri.fsPath, 'psysh.phar');
+  }
+
+  async psyShExists(): Promise<boolean> {
+    try {
+      const psyshPath = await this.getPsyShPath();
+      await fs.promises.access(psyshPath, fs.constants.F_OK);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async ensurePsyShAvailable(): Promise<string> {
+    const psyshPath = await this.getPsyShPath();
+
+    if (await this.psyShExists()) {
+      return psyshPath;
+    }
+
+    // For now, return the path even if file doesn't exist
+    // Download functionality will be implemented in next step
+    return psyshPath;
+  }
 }
 
 /**

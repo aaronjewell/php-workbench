@@ -563,4 +563,54 @@ echo "after";`,
     assert.equal(config.get('psyshPath'), '', 'psyshPath should default to empty string');
     assert.equal(config.get('sessionTimeout'), 300000, 'sessionTimeout should default to 300000');
   });
+
+  // Tests for PsySH .phar file management
+  test('should be able to check if PsySH .phar file exists', async () => {
+    const { PsyShManagerImpl } = await import('../extension.js');
+    const mockContext = {
+      globalStorageUri: { fsPath: '/tmp/test-storage' },
+    } as vscode.ExtensionContext;
+    const manager = new (PsyShManagerImpl as any)(mockContext);
+
+    const exists = await manager.psyShExists();
+    assert.equal(typeof exists, 'boolean', 'psyShExists should return a boolean');
+  });
+
+  test('should be able to get PsySH .phar file path', async () => {
+    const { PsyShManagerImpl } = await import('../extension.js');
+    const mockContext = {
+      globalStorageUri: { fsPath: '/tmp/test-storage' },
+    } as vscode.ExtensionContext;
+    const manager = new (PsyShManagerImpl as any)(mockContext);
+
+    const path = await manager.getPsyShPath();
+    assert.equal(typeof path, 'string', 'getPsyShPath should return a string');
+    assert.ok(path.length > 0, 'PsySH path should not be empty');
+    assert.ok(path.endsWith('.phar'), 'PsySH path should end with .phar');
+  });
+
+  test('should handle custom PsySH path from configuration', async () => {
+    const originalConfig = vscode.workspace.getConfiguration;
+    const testPath = '/custom/path/to/psysh.phar';
+
+    // Mock configuration to return custom path
+    vscode.workspace.getConfiguration = (section?: string) =>
+      ({
+        get: (key: string) => (key === 'psyshPath' ? testPath : ''),
+      }) as any;
+
+    try {
+      const { PsyShManagerImpl } = await import('../extension.js');
+      const mockContext = {
+        globalStorageUri: { fsPath: '/tmp/test-storage' },
+      } as vscode.ExtensionContext;
+      const manager = new (PsyShManagerImpl as any)(mockContext);
+
+      const path = await manager.getPsyShPath();
+      assert.equal(path, testPath, 'Should return custom PsySH path from configuration');
+    } finally {
+      // Restore original configuration
+      vscode.workspace.getConfiguration = originalConfig;
+    }
+  });
 });
