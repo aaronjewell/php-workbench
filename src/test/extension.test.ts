@@ -613,4 +613,73 @@ echo "after";`,
       vscode.workspace.getConfiguration = originalConfig;
     }
   });
+
+  // Tests for PHPInteractiveSession management
+  test('should be able to create PHPInteractiveSession instance', async () => {
+    const { PHPInteractiveSessionImpl, PsyShManagerImpl } = await import('../extension.js');
+    const mockContext = {
+      globalStorageUri: { fsPath: '/tmp/test-storage' },
+    } as vscode.ExtensionContext;
+    const psyshManager = new (PsyShManagerImpl as any)(mockContext);
+
+    const session = new (PHPInteractiveSessionImpl as any)(psyshManager, '/tmp/workspace');
+    assert.ok(session, 'Should be able to create PHPInteractiveSession instance');
+    assert.equal(session.isRunning(), false, 'Session should initially not be running');
+  });
+
+  test('should be able to start interactive session', async () => {
+    const { PHPInteractiveSessionImpl, PsyShManagerImpl } = await import('../extension.js');
+    const mockContext = {
+      globalStorageUri: { fsPath: '/tmp/test-storage' },
+    } as vscode.ExtensionContext;
+    const psyshManager = new (PsyShManagerImpl as any)(mockContext);
+    const session = new (PHPInteractiveSessionImpl as any)(psyshManager, '/tmp/workspace');
+
+    await session.start();
+    assert.equal(session.isRunning(), true, 'Session should be running after start');
+  });
+
+  test('should be able to execute code in interactive session', async () => {
+    const { PHPInteractiveSessionImpl, PsyShManagerImpl } = await import('../extension.js');
+    const mockContext = {
+      globalStorageUri: { fsPath: '/tmp/test-storage' },
+    } as vscode.ExtensionContext;
+    const psyshManager = new (PsyShManagerImpl as any)(mockContext);
+    const session = new (PHPInteractiveSessionImpl as any)(psyshManager, '/tmp/workspace');
+
+    const result = await session.executeCode('echo "Hello World";');
+    assert.ok(result, 'Should return execution result');
+    assert.equal(typeof result.output, 'string', 'Result should have output');
+    assert.equal(result.success, true, 'Execution should be successful');
+  });
+
+  test('should be able to stop interactive session', async () => {
+    const { PHPInteractiveSessionImpl, PsyShManagerImpl } = await import('../extension.js');
+    const mockContext = {
+      globalStorageUri: { fsPath: '/tmp/test-storage' },
+    } as vscode.ExtensionContext;
+    const psyshManager = new (PsyShManagerImpl as any)(mockContext);
+    const session = new (PHPInteractiveSessionImpl as any)(psyshManager, '/tmp/workspace');
+
+    await session.start();
+    assert.equal(session.isRunning(), true, 'Session should be running after start');
+
+    await session.stop();
+    assert.equal(session.isRunning(), false, 'Session should not be running after stop');
+  });
+
+  test('should be able to restart interactive session', async () => {
+    const { PHPInteractiveSessionImpl, PsyShManagerImpl } = await import('../extension.js');
+    const mockContext = {
+      globalStorageUri: { fsPath: '/tmp/test-storage' },
+    } as vscode.ExtensionContext;
+    const psyshManager = new (PsyShManagerImpl as any)(mockContext);
+    const session = new (PHPInteractiveSessionImpl as any)(psyshManager, '/tmp/workspace');
+
+    await session.start();
+    assert.equal(session.isRunning(), true, 'Session should be running after start');
+
+    await session.restart();
+    assert.equal(session.isRunning(), true, 'Session should be running after restart');
+  });
 });

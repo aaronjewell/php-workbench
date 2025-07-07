@@ -180,6 +180,78 @@ async function executePhpCode(code: string): Promise<ExecutionResult> {
   }
 }
 
+/**
+ * Manages interactive PsySH session
+ */
+export interface PHPInteractiveSession {
+  /** Start the interactive session */
+  start(): Promise<void>;
+  /** Execute PHP code in the session */
+  executeCode(code: string): Promise<ExecutionResult>;
+  /** Stop the interactive session */
+  stop(): Promise<void>;
+  /** Check if session is running */
+  isRunning(): boolean;
+  /** Restart the session */
+  restart(): Promise<void>;
+}
+
+/**
+ * Implementation of interactive PsySH session management
+ */
+export class PHPInteractiveSessionImpl implements PHPInteractiveSession {
+  private process: any = null;
+  private readonly psyshManager: PsyShManager;
+  private readonly workspaceRoot: string;
+
+  constructor(psyshManager: PsyShManager, workspaceRoot: string) {
+    this.psyshManager = psyshManager;
+    this.workspaceRoot = workspaceRoot;
+  }
+
+  async start(): Promise<void> {
+    if (this.isRunning()) {
+      return; // Already running
+    }
+
+    const psyshPath = await this.psyshManager.ensurePsyShAvailable();
+
+    // For now, just mark as started without actually spawning
+    // Process spawning will be implemented in next step
+    this.process = { dummy: true };
+  }
+
+  async executeCode(code: string): Promise<ExecutionResult> {
+    if (!this.isRunning()) {
+      await this.start();
+    }
+
+    // For now, return placeholder result
+    // Actual execution will be implemented in next step
+    return {
+      output: `Interactive execution: ${code}`,
+      success: true,
+    };
+  }
+
+  async stop(): Promise<void> {
+    if (this.process) {
+      // For now, just clear the process reference
+      // Actual process termination will be implemented in next step
+      this.process = null;
+    }
+  }
+
+  isRunning(): boolean {
+    return this.process !== null;
+  }
+
+  async restart(): Promise<void> {
+    await this.stop();
+    await this.start();
+  }
+}
+
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
