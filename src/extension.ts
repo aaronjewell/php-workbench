@@ -7,8 +7,6 @@ let outputChannel: vscode.OutputChannel;
 
 /**
  * Represents the result of PHP code execution
- *
- * Why: Provides structured response for code execution with output and error handling
  */
 export interface ExecutionResult {
   /** The output from successful code execution */
@@ -21,8 +19,6 @@ export interface ExecutionResult {
 
 /**
  * Displays execution results in the QuickMix output panel
- *
- * Why: Provides user feedback for code execution without disrupting editor workspace
  *
  * @param result - The execution result to display
  */
