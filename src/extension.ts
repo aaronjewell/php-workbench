@@ -5,6 +5,9 @@ import { promisify } from 'util';
 
 const execAsync = promisify(exec);
 
+// Global output channel for displaying results
+let outputChannel: vscode.OutputChannel;
+
 /**
  * Represents the result of PHP code execution
  *
@@ -17,6 +20,38 @@ export interface ExecutionResult {
   error?: string;
   /** Whether the execution was successful */
   success: boolean;
+}
+
+/**
+ * Displays execution results in the QuickMix output panel
+ *
+ * Why: Provides user feedback for code execution without disrupting editor workspace
+ *
+ * @param result - The execution result to display
+ */
+function displayResult(result: ExecutionResult): void {
+  if (!outputChannel) {
+    outputChannel = vscode.window.createOutputChannel('QuickMix');
+  }
+
+  // Clear previous output and add timestamp
+  outputChannel.clear();
+  outputChannel.appendLine(`--- QuickMix Execution (${new Date().toLocaleTimeString()}) ---`);
+
+  if (result.success) {
+    if (result.output) {
+      outputChannel.appendLine('Output:');
+      outputChannel.appendLine(result.output);
+    } else {
+      outputChannel.appendLine('Execution completed successfully (no output)');
+    }
+  } else {
+    outputChannel.appendLine('Error:');
+    outputChannel.appendLine(result.error || 'Unknown error occurred');
+  }
+
+  outputChannel.appendLine('--- End ---');
+  outputChannel.show();
 }
 
 /**
@@ -98,13 +133,17 @@ export function activate(context: vscode.ExtensionContext) {
 
         const code = editor.document.getText();
 
-        return await executePhpCode(code);
+        const result = await executePhpCode(code);
+        displayResult(result);
+        return result;
       } catch (error) {
-        return {
+        const errorResult = {
           output: '',
           error: `Execution failed: ${error}`,
           success: false,
         };
+        displayResult(errorResult);
+        return errorResult;
       }
     }
   );
@@ -113,4 +152,8 @@ export function activate(context: vscode.ExtensionContext) {
 }
 
 // This method is called when your extension is deactivated
-export function deactivate() {}
+export function deactivate() {
+  if (outputChannel) {
+    outputChannel.dispose();
+  }
+}

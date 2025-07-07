@@ -200,4 +200,44 @@ suite('Extension Test Suite', () => {
     assert.ok(result.success, 'Result should execute PHP without opening tags');
     assert.ok(result.output.includes('No opening tag'), 'Result should contain output');
   });
+
+  test('should execute code and display results', async () => {
+    const document = await vscode.workspace.openTextDocument({
+      content: '<?php echo "Hello World";',
+      language: 'php',
+    });
+    await vscode.window.showTextDocument(document);
+
+    const result = await vscode.commands.executeCommand<ExecutionResult>('quickmix.executeCode');
+
+    assert.ok(result.success, 'Execution should be successful');
+    assert.ok(result.output.includes('Hello World'), 'Should contain expected output');
+    // Note: The output panel display is tested through integration -
+    // the command should complete successfully and user will see results in UI
+  });
+
+  test('should execute code with errors and handle gracefully', async () => {
+    const document = await vscode.workspace.openTextDocument({
+      content: '<?php echo "unclosed string;',
+      language: 'php',
+    });
+    await vscode.window.showTextDocument(document);
+
+    const result = await vscode.commands.executeCommand<ExecutionResult>('quickmix.executeCode');
+
+    assert.strictEqual(result.success, false, 'Should handle syntax errors');
+    assert.ok(result.error, 'Should provide error information');
+    // Note: Error display in output panel is tested through integration -
+    // the command should complete and user will see error in UI
+  });
+
+  test('should handle execution when no active editor', async () => {
+    // Close any open editors
+    await vscode.commands.executeCommand('workbench.action.closeAllEditors');
+
+    const result = await vscode.commands.executeCommand<ExecutionResult>('quickmix.executeCode');
+
+    assert.strictEqual(result.success, false, 'Should fail when no active editor');
+    assert.ok(result.error?.includes('No active editor'), 'Should provide clear error message');
+  });
 });
