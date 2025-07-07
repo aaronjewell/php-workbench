@@ -3,6 +3,7 @@ import * as vscode from 'vscode';
 import { spawn } from 'child_process';
 import * as path from 'path';
 import * as fs from 'fs';
+import * as https from 'https';
 
 // Global output channel for displaying results
 let outputChannel: vscode.OutputChannel;
@@ -70,9 +71,58 @@ export class PsyShManagerImpl implements PsyShManager {
       return psyshPath;
     }
 
-    // For now, return the path even if file doesn't exist
-    // Download functionality will be implemented in next step
+    // Download PsySH if it doesn't exist
+    await this.downloadPsySH(psyshPath);
     return psyshPath;
+  }
+
+  /**
+   * Downloads PsySH .phar file from the official source
+   *
+   * Why: Provides seamless setup without requiring manual PsySH installation
+   *
+   * @param targetPath - Local file path where PsySH should be saved
+   */
+  private async downloadPsySH(targetPath: string): Promise<void> {
+    const psyshUrl = 'https://psysh.org/psysh';
+
+    // Ensure the directory exists
+    const dir = path.dirname(targetPath);
+    await fs.promises.mkdir(dir, { recursive: true });
+
+    return new Promise((resolve, reject) => {
+      const file = fs.createWriteStream(targetPath);
+
+      https
+        .get(psyshUrl, response => {
+          if (response.statusCode !== 200) {
+            reject(new Error(`Failed to download PsySH: HTTP ${response.statusCode}`));
+            return;
+          }
+
+          response.pipe(file);
+
+          file.on('finish', () => {
+            file.close();
+            // Make the .phar file executable
+            fs.chmod(targetPath, '755', err => {
+              if (err) {
+                reject(err);
+              } else {
+                resolve();
+              }
+            });
+          });
+
+          file.on('error', err => {
+            fs.unlink(targetPath, () => {}); // Clean up on error
+            reject(err);
+          });
+        })
+        .on('error', err => {
+          reject(err);
+        });
+    });
   }
 }
 
