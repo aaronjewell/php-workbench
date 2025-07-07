@@ -44,7 +44,7 @@ function displayResult(result: ExecutionResult): void {
   }
 
   outputChannel.appendLine('--- End ---');
-  outputChannel.show();
+  outputChannel.show(true); // preserveFocus: true keeps focus on editor
 }
 
 /**
@@ -153,16 +153,16 @@ export function activate(context: vscode.ExtensionContext) {
   const executeCommand = vscode.commands.registerCommand(
     'quickmix.executeCode',
     async (): Promise<ExecutionResult> => {
-      try {
-        const editor = vscode.window.activeTextEditor;
-        if (!editor) {
-          return {
-            output: '',
-            error: 'No active editor found',
-            success: false,
-          };
-        }
+      const editor = vscode.window.activeTextEditor;
+      if (!editor) {
+        return {
+          output: '',
+          error: 'No active editor found',
+          success: false,
+        };
+      }
 
+      try {
         const code = !editor.selection.isEmpty
           ? editor.document.getText(editor.selection)
           : editor.document.getText();

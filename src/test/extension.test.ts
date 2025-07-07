@@ -409,4 +409,83 @@ echo "after";`,
     assert.ok(!result.output.includes('before'), 'Should not execute unselected code');
     assert.ok(!result.output.includes('after'), 'Should not execute unselected code');
   });
+
+  // Tests for focus restoration after output display
+  test('should restore focus to editor after displaying output', async () => {
+    const document = await vscode.workspace.openTextDocument({
+      content: '<?php echo "test";',
+      language: 'php',
+    });
+    const editor = await vscode.window.showTextDocument(document);
+
+    await vscode.commands.executeCommand<ExecutionResult>('quickmix.executeCode');
+
+    assert.strictEqual(
+      vscode.window.activeTextEditor,
+      editor,
+      'Should maintain active editor after execution'
+    );
+  });
+
+  test('should preserve cursor position after displaying output', async () => {
+    const document = await vscode.workspace.openTextDocument({
+      content: '<?php echo "line1"; echo "line2";',
+      language: 'php',
+    });
+    const editor = await vscode.window.showTextDocument(document);
+
+    const originalPosition = new vscode.Position(0, 15);
+    editor.selection = new vscode.Selection(originalPosition, originalPosition);
+
+    await vscode.commands.executeCommand<ExecutionResult>('quickmix.executeCode');
+
+    assert.strictEqual(vscode.window.activeTextEditor, editor, 'Should maintain active editor');
+    assert.strictEqual(
+      editor.selection.active.line,
+      originalPosition.line,
+      'Should preserve cursor line'
+    );
+    assert.strictEqual(
+      editor.selection.active.character,
+      originalPosition.character,
+      'Should preserve cursor character'
+    );
+  });
+
+  test('should preserve selection after displaying output', async () => {
+    const document = await vscode.workspace.openTextDocument({
+      content: '<?php echo "first"; echo "selected"; echo "last";',
+      language: 'php',
+    });
+    const editor = await vscode.window.showTextDocument(document);
+
+    const startPos = new vscode.Position(0, 20);
+    const endPos = new vscode.Position(0, 36);
+    const originalSelection = new vscode.Selection(startPos, endPos);
+    editor.selection = originalSelection;
+
+    await vscode.commands.executeCommand<ExecutionResult>('quickmix.executeCode');
+
+    assert.strictEqual(vscode.window.activeTextEditor, editor, 'Should maintain active editor');
+    assert.strictEqual(
+      editor.selection.start.line,
+      startPos.line,
+      'Should preserve selection start line'
+    );
+    assert.strictEqual(
+      editor.selection.start.character,
+      startPos.character,
+      'Should preserve selection start character'
+    );
+    assert.strictEqual(
+      editor.selection.end.line,
+      endPos.line,
+      'Should preserve selection end line'
+    );
+    assert.strictEqual(
+      editor.selection.end.character,
+      endPos.character,
+      'Should preserve selection end character'
+    );
+  });
 });
