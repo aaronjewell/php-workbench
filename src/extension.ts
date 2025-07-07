@@ -169,7 +169,9 @@ export function activate(context: vscode.ExtensionContext) {
           };
         }
 
-        const code = editor.document.getText();
+        const code = !editor.selection.isEmpty
+          ? editor.document.getText(editor.selection)
+          : editor.document.getText();
 
         const result = await executePhpCode(code);
         displayResult(result);

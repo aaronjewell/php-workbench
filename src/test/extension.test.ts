@@ -317,4 +317,97 @@ echo "Dollar signs and \$variable contains: " . $variable;`,
     assert.strictEqual(result.success, false, 'Should fail when no active editor');
     assert.ok(result.error?.includes('No active editor'), 'Should provide clear error message');
   });
+
+  // Tests for selection-based code execution - following zero-one-many strategy
+  test('should execute selected PHP code when text is selected', async () => {
+    const document = await vscode.workspace.openTextDocument({
+      content: '<?php echo "first"; echo "selected"; echo "last";',
+      language: 'php',
+    });
+    const editor = await vscode.window.showTextDocument(document);
+
+    const startPos = new vscode.Position(0, 20); // start of: echo "selected";
+    const endPos = new vscode.Position(0, 36); // end of: echo "selected";
+    editor.selection = new vscode.Selection(startPos, endPos);
+
+    const result = await vscode.commands.executeCommand<ExecutionResult>('quickmix.executeCode');
+
+    assert.ok(result.success, 'Selected code execution should be successful');
+    assert.ok(result.output.includes('selected'), 'Should contain output from selected code');
+    assert.ok(!result.output.includes('first'), 'Should not contain output from unselected code');
+    assert.ok(!result.output.includes('last'), 'Should not contain output from unselected code');
+  });
+
+  test('should execute multiline selected PHP code', async () => {
+    const document = await vscode.workspace.openTextDocument({
+      content: `<?php
+echo "before";
+$name = "QuickMix";
+echo "Selected: " . $name;
+echo "after";`,
+      language: 'php',
+    });
+    const editor = await vscode.window.showTextDocument(document);
+
+    const startPos = new vscode.Position(2, 0); // start of: $name = "QuickMix";
+    const endPos = new vscode.Position(3, 26); // end of: echo "Selected: " . $name;
+    editor.selection = new vscode.Selection(startPos, endPos);
+
+    const result = await vscode.commands.executeCommand<ExecutionResult>('quickmix.executeCode');
+
+    assert.ok(
+      result.success,
+      `Multiline selected code execution should be successful, but failed with error: ${result.error}`
+    );
+    assert.ok(
+      result.output.includes('Selected: QuickMix'),
+      'Should contain output from selected lines'
+    );
+    assert.ok(!result.output.includes('before'), 'Should not contain output from unselected lines');
+    assert.ok(!result.output.includes('after'), 'Should not contain output from unselected lines');
+  });
+
+  test('should execute entire document when no selection', async () => {
+    const document = await vscode.workspace.openTextDocument({
+      content: '<?php echo "first"; echo "second"; echo "third";',
+      language: 'php',
+    });
+    const editor = await vscode.window.showTextDocument(document);
+
+    const cursorPos = new vscode.Position(0, 0);
+    editor.selection = new vscode.Selection(cursorPos, cursorPos);
+
+    const result = await vscode.commands.executeCommand<ExecutionResult>('quickmix.executeCode');
+
+    assert.ok(result.success, 'Full document execution should be successful');
+    assert.ok(result.output.includes('first'), 'Should contain output from entire document');
+    assert.ok(result.output.includes('second'), 'Should contain output from entire document');
+    assert.ok(result.output.includes('third'), 'Should contain output from entire document');
+  });
+
+  test('should add PHP opening tag to selected code without it', async () => {
+    const document = await vscode.workspace.openTextDocument({
+      content: '<?php echo "before"; echo "selected"; echo "after";',
+      language: 'php',
+    });
+    const editor = await vscode.window.showTextDocument(document);
+
+    // Select only the middle echo statement without PHP opening tag
+    const startPos = new vscode.Position(0, 21); // start of: echo "selected";
+    const endPos = new vscode.Position(0, 37); // end of: echo "selected";
+    editor.selection = new vscode.Selection(startPos, endPos);
+
+    const result = await vscode.commands.executeCommand<ExecutionResult>('quickmix.executeCode');
+
+    assert.ok(
+      result.success,
+      `Selected code without PHP tag should execute successfully, but failed with error: ${result.error}`
+    );
+    assert.ok(
+      result.output.includes('selected'),
+      'Should execute selected code with auto-added PHP tag'
+    );
+    assert.ok(!result.output.includes('before'), 'Should not execute unselected code');
+    assert.ok(!result.output.includes('after'), 'Should not execute unselected code');
+  });
 });
