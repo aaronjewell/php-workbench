@@ -354,8 +354,14 @@ echo "after";`,
 
     const result = await vscode.commands.executeCommand<ExecutionResult>('quickmix.executeCode');
 
-    assert.ok(result.success, `Multiline selected code execution should be successful, but failed with error: ${result.error}`);
-    assert.ok(result.output.includes('Selected: QuickMix'), 'Should contain output from selected lines');
+    assert.ok(
+      result.success,
+      `Multiline selected code execution should be successful, but failed with error: ${result.error}`
+    );
+    assert.ok(
+      result.output.includes('Selected: QuickMix'),
+      'Should contain output from selected lines'
+    );
     assert.ok(!result.output.includes('before'), 'Should not contain output from unselected lines');
     assert.ok(!result.output.includes('after'), 'Should not contain output from unselected lines');
   });
@@ -392,8 +398,14 @@ echo "after";`,
 
     const result = await vscode.commands.executeCommand<ExecutionResult>('quickmix.executeCode');
 
-    assert.ok(result.success, `Selected code without PHP tag should execute successfully, but failed with error: ${result.error}`);
-    assert.ok(result.output.includes('selected'), 'Should execute selected code with auto-added PHP tag');
+    assert.ok(
+      result.success,
+      `Selected code without PHP tag should execute successfully, but failed with error: ${result.error}`
+    );
+    assert.ok(
+      result.output.includes('selected'),
+      'Should execute selected code with auto-added PHP tag'
+    );
     assert.ok(!result.output.includes('before'), 'Should not execute unselected code');
     assert.ok(!result.output.includes('after'), 'Should not execute unselected code');
   });
