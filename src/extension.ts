@@ -1,18 +1,66 @@
 // The module 'vscode' contains the VS Code extensibility API
 import * as vscode from 'vscode';
+import { exec } from 'child_process';
+import { promisify } from 'util';
+
+const execAsync = promisify(exec);
 
 /**
  * Represents the result of PHP code execution
  *
  * Why: Provides structured response for code execution with output and error handling
  */
-interface ExecutionResult {
+export interface ExecutionResult {
   /** The output from successful code execution */
   output: string;
   /** Any error messages from failed execution */
   error?: string;
   /** Whether the execution was successful */
   success: boolean;
+}
+
+/**
+ * Executes PHP code using the system PHP interpreter
+ */
+async function executePhpCode(code: string): Promise<ExecutionResult> {
+  try {
+    // Handle empty code
+    if (!code.trim()) {
+      return {
+        output: '',
+        success: true,
+      };
+    }
+
+    // Prepare PHP code for execution
+    // Remove <?php tags since php -r runs code directly in PHP context
+    let phpCode = code.trim();
+    if (phpCode.startsWith('<?php')) {
+      phpCode = phpCode.substring(5).trim();
+    }
+
+    // Execute PHP code using php -r (run code inline)
+    const { stdout, stderr } = await execAsync(`php -r "${phpCode.replace(/"/g, '\\"')}"`);
+
+    if (stderr) {
+      return {
+        output: '',
+        error: stderr,
+        success: false,
+      };
+    }
+
+    return {
+      output: stdout,
+      success: true,
+    };
+  } catch (error: any) {
+    return {
+      output: '',
+      error: error.message || 'PHP execution failed',
+      success: false,
+    };
+  }
 }
 
 // This method is called when your extension is activated
@@ -50,12 +98,7 @@ export function activate(context: vscode.ExtensionContext) {
 
         const code = editor.document.getText();
 
-        // Minimal implementation - return basic success result for now
-        // Will be expanded with actual PHP execution in subsequent steps
-        return {
-          output: 'Code executed successfully (placeholder)',
-          success: true,
-        };
+        return await executePhpCode(code);
       } catch (error) {
         return {
           output: '',

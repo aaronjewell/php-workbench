@@ -3,6 +3,7 @@ import * as assert from 'assert';
 // You can import and use all API from the 'vscode' module
 // as well as import your extension to test it
 import * as vscode from 'vscode';
+import { ExecutionResult } from '../extension';
 // import * as myExtension from '../../extension';
 
 suite('Extension Test Suite', () => {
@@ -124,9 +125,16 @@ suite('Extension Test Suite', () => {
     });
     await vscode.window.showTextDocument(document);
 
-    const result = await vscode.commands.executeCommand('quickmix.executeCode');
+    const result = await vscode.commands.executeCommand<ExecutionResult>('quickmix.executeCode');
 
-    assert.ok(result, 'Should return execution result');
+    assert.ok(result.success, 'Execution should be successful');
+    assert.ok(result.output.includes('Hello World'), 'Should contain actual PHP output');
+    assert.ok(!result.error, 'Should not contain error');
+    assert.notStrictEqual(
+      result.output,
+      'Code executed successfully (placeholder)',
+      'Should not be placeholder'
+    );
   });
 
   test('should handle empty PHP code', async () => {
@@ -136,8 +144,9 @@ suite('Extension Test Suite', () => {
     });
     await vscode.window.showTextDocument(document);
 
-    const result = await vscode.commands.executeCommand('quickmix.executeCode');
-    assert.ok(result, 'Should handle empty code gracefully');
+    const result = await vscode.commands.executeCommand<ExecutionResult>('quickmix.executeCode');
+    assert.ok(result.success, 'Result should be successful');
+    assert.ok(!result.error, 'Result should not contain error');
   });
 
   test('should execute single PHP statement', async () => {
@@ -147,8 +156,9 @@ suite('Extension Test Suite', () => {
     });
     await vscode.window.showTextDocument(document);
 
-    const result = await vscode.commands.executeCommand('quickmix.executeCode');
-    assert.ok(result, 'Should execute single statement');
+    const result = (await vscode.commands.executeCommand('quickmix.executeCode')) as any;
+    assert.ok(result.success, 'Execution should be successful');
+    assert.ok(result.output.includes('test'), 'Result should contain output');
   });
 
   test('should execute multiple PHP statements', async () => {
@@ -158,7 +168,36 @@ suite('Extension Test Suite', () => {
     });
     await vscode.window.showTextDocument(document);
 
-    const result = await vscode.commands.executeCommand('quickmix.executeCode');
-    assert.ok(result, 'Should execute multiple statements');
+    const result = await vscode.commands.executeCommand<ExecutionResult>('quickmix.executeCode');
+    assert.ok(result.success, 'Execution should be successful');
+    assert.ok(result.output.includes('line1'), 'Result should contain first output');
+    assert.ok(result.output.includes('line2'), 'Result should contain second output');
+    assert.ok(result.output.includes('line3'), 'Result should contain third output');
+  });
+
+  test('should handle PHP syntax errors', async () => {
+    const document = await vscode.workspace.openTextDocument({
+      content: '<?php echo "unclosed string;',
+      language: 'php',
+    });
+    await vscode.window.showTextDocument(document);
+
+    const result = await vscode.commands.executeCommand<ExecutionResult>('quickmix.executeCode');
+
+    assert.strictEqual(result.success, false, 'Result should fail on syntax error');
+    assert.ok(result.error, 'Result should contain error message');
+  });
+
+  test('should execute PHP without opening tags', async () => {
+    const document = await vscode.workspace.openTextDocument({
+      content: 'echo "No opening tag";',
+      language: 'php',
+    });
+    await vscode.window.showTextDocument(document);
+
+    const result = await vscode.commands.executeCommand<ExecutionResult>('quickmix.executeCode');
+
+    assert.ok(result.success, 'Result should execute PHP without opening tags');
+    assert.ok(result.output.includes('No opening tag'), 'Result should contain output');
   });
 });
