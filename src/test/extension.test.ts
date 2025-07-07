@@ -642,7 +642,7 @@ echo "after";`,
     } as vscode.ExtensionContext;
     const psyshManager = new (PsyShManagerImpl as any)(mockContext);
 
-    const session = new (PHPInteractiveSessionImpl as any)(psyshManager, '/tmp/workspace');
+    const session = new (PHPInteractiveSessionImpl as any)(psyshManager, process.cwd());
     assert.ok(session, 'Should be able to create PHPInteractiveSession instance');
     assert.equal(session.isRunning(), false, 'Session should initially not be running');
   });
@@ -653,7 +653,7 @@ echo "after";`,
       globalStorageUri: { fsPath: '/tmp/test-storage' },
     } as vscode.ExtensionContext;
     const psyshManager = new (PsyShManagerImpl as any)(mockContext);
-    const session = new (PHPInteractiveSessionImpl as any)(psyshManager, '/tmp/workspace');
+    const session = new (PHPInteractiveSessionImpl as any)(psyshManager, process.cwd());
 
     await session.start();
     assert.equal(session.isRunning(), true, 'Session should be running after start');
@@ -665,7 +665,7 @@ echo "after";`,
       globalStorageUri: { fsPath: '/tmp/test-storage' },
     } as vscode.ExtensionContext;
     const psyshManager = new (PsyShManagerImpl as any)(mockContext);
-    const session = new (PHPInteractiveSessionImpl as any)(psyshManager, '/tmp/workspace');
+    const session = new (PHPInteractiveSessionImpl as any)(psyshManager, process.cwd());
 
     const result = await session.executeCode('echo "Hello World";');
     assert.ok(result, 'Should return execution result');
@@ -679,7 +679,7 @@ echo "after";`,
       globalStorageUri: { fsPath: '/tmp/test-storage' },
     } as vscode.ExtensionContext;
     const psyshManager = new (PsyShManagerImpl as any)(mockContext);
-    const session = new (PHPInteractiveSessionImpl as any)(psyshManager, '/tmp/workspace');
+    const session = new (PHPInteractiveSessionImpl as any)(psyshManager, process.cwd());
 
     await session.start();
     assert.equal(session.isRunning(), true, 'Session should be running after start');
@@ -694,7 +694,7 @@ echo "after";`,
       globalStorageUri: { fsPath: '/tmp/test-storage' },
     } as vscode.ExtensionContext;
     const psyshManager = new (PsyShManagerImpl as any)(mockContext);
-    const session = new (PHPInteractiveSessionImpl as any)(psyshManager, '/tmp/workspace');
+    const session = new (PHPInteractiveSessionImpl as any)(psyshManager, process.cwd());
 
     await session.start();
     assert.equal(session.isRunning(), true, 'Session should be running after start');

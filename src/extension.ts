@@ -266,9 +266,26 @@ export class PHPInteractiveSessionImpl implements PHPInteractiveSession {
 
     const psyshPath = await this.psyshManager.ensurePsyShAvailable();
 
-    // For now, just mark as started without actually spawning
-    // Process spawning will be implemented in next step
-    this.process = { dummy: true };
+    // Spawn PsySH process with proper working directory and environment
+    this.process = spawn('php', [psyshPath], {
+      cwd: this.workspaceRoot,
+      stdio: ['pipe', 'pipe', 'pipe'],
+      env: { ...process.env }, // Preserve environment variables including PATH
+    });
+
+    // Set up error handling for the process
+    this.process.on('error', (error: Error) => {
+      console.error('PsySH process error:', error);
+      this.process = null;
+    });
+
+    this.process.on('exit', (code: number) => {
+      console.log('PsySH process exited with code:', code);
+      this.process = null;
+    });
+
+    // Wait a bit for the process to start up
+    await new Promise(resolve => setTimeout(resolve, 100));
   }
 
   async executeCode(code: string): Promise<ExecutionResult> {
@@ -276,24 +293,78 @@ export class PHPInteractiveSessionImpl implements PHPInteractiveSession {
       await this.start();
     }
 
-    // For now, return placeholder result
-    // Actual execution will be implemented in next step
-    return {
-      output: `Interactive execution: ${code}`,
-      success: true,
-    };
+    if (!this.process || !this.process.stdin) {
+      return {
+        output: '',
+        error: 'PsySH process not available',
+        success: false,
+      };
+    }
+
+    return new Promise(resolve => {
+      let output = '';
+      let errorOutput = '';
+
+      // Set up data listeners for this execution
+      const onData = (data: Buffer) => {
+        output += data.toString();
+      };
+
+      const onError = (data: Buffer) => {
+        errorOutput += data.toString();
+      };
+
+      this.process.stdout.on('data', onData);
+      this.process.stderr.on('data', onError);
+
+      // Send the code to PsySH
+      this.process.stdin.write(code + '\n');
+
+      // Wait for response (simplified - in real implementation would need better parsing)
+      setTimeout(() => {
+        this.process.stdout.removeListener('data', onData);
+        this.process.stderr.removeListener('data', onError);
+
+        if (errorOutput) {
+          resolve({
+            output: '',
+            error: errorOutput,
+            success: false,
+          });
+        } else {
+          resolve({
+            output: output || 'Code executed successfully',
+            success: true,
+          });
+        }
+      }, 1000); // Give PsySH time to process
+    });
   }
 
   async stop(): Promise<void> {
     if (this.process) {
-      // For now, just clear the process reference
-      // Actual process termination will be implemented in next step
+      // Gracefully close stdin first
+      if (this.process.stdin) {
+        this.process.stdin.end();
+      }
+
+      // Try graceful termination first
+      this.process.kill('SIGTERM');
+
+      // Wait a bit for graceful shutdown
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Force kill if still running
+      if (this.process && !this.process.killed) {
+        this.process.kill('SIGKILL');
+      }
+
       this.process = null;
     }
   }
 
   isRunning(): boolean {
-    return this.process !== null;
+    return this.process !== null && !this.process.killed;
   }
 
   async restart(): Promise<void> {
