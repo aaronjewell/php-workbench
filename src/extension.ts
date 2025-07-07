@@ -108,21 +108,24 @@ export function activate(context: vscode.ExtensionContext) {
   // The command has been defined in the package.json file
   // Now provide the implementation of the command with registerCommand
   // The commandId parameter must match the command field in package.json
-  const disposable = vscode.commands.registerCommand('quickmix.newScratchpad', async () => {
-    try {
-      const document = await vscode.workspace.openTextDocument({
-        language: 'php',
-        content: '<?php\n\n',
-      });
-      const editor = await vscode.window.showTextDocument(document);
+  const newScratchpadCommand = vscode.commands.registerCommand(
+    'quickmix.newScratchpad',
+    async () => {
+      try {
+        const document = await vscode.workspace.openTextDocument({
+          language: 'php',
+          content: '<?php\n\n',
+        });
+        const editor = await vscode.window.showTextDocument(document);
 
-      // Position cursor at the end of the file
-      const endPosition = editor.document.positionAt(editor.document.getText().length);
-      editor.selection = new vscode.Selection(endPosition, endPosition);
-    } catch (error) {
-      await vscode.window.showErrorMessage(`Failed to create scratchpad: ${error}`);
+        // Position cursor at the end of the file
+        const endPosition = editor.document.positionAt(editor.document.getText().length);
+        editor.selection = new vscode.Selection(endPosition, endPosition);
+      } catch (error) {
+        await vscode.window.showErrorMessage(`Failed to create scratchpad: ${error}`);
+      }
     }
-  });
+  );
 
   const executeCommand = vscode.commands.registerCommand(
     'quickmix.executeCode',
@@ -154,7 +157,7 @@ export function activate(context: vscode.ExtensionContext) {
     }
   );
 
-  context.subscriptions.push(disposable, executeCommand);
+  context.subscriptions.push(newScratchpadCommand, executeCommand);
 }
 
 // This method is called when your extension is deactivated
