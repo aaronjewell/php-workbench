@@ -34,7 +34,28 @@
         "mac": "cmd+enter",
         "when": "editorTextFocus && resourceLangId == php"
       }
-    ]
+    ],
+    "configuration": {
+      "type": "object",
+      "title": "QuickMix",
+      "properties": {
+        "quickmix.useInteractiveMode": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable interactive REPL mode with persistent PHP session using PsySH"
+        },
+        "quickmix.psyshPath": {
+          "type": "string",
+          "default": "",
+          "description": "Custom path to PsySH .phar file (leave empty to use bundled version)"
+        },
+        "quickmix.sessionTimeout": {
+          "type": "number",
+          "default": 300000,
+          "description": "Session timeout in milliseconds (300000 = 5 minutes)"
+        }
+      }
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run format && npm run compile",

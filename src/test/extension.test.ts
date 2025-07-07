@@ -488,4 +488,79 @@ echo "after";`,
       'Should preserve selection end character'
     );
   });
+
+  // Tests for configuration settings
+  test('should have configuration properties defined in package.json', async () => {
+    const config = extension.packageJSON.contributes.configuration;
+
+    assert.ok(config, 'Configuration section should exist');
+    assert.equal(config.type, 'object', 'Configuration should be of type object');
+    assert.equal(config.title, 'QuickMix', 'Configuration title should be QuickMix');
+    assert.ok(config.properties, 'Configuration properties should exist');
+  });
+
+  test('should have useInteractiveMode configuration property', async () => {
+    const properties = extension.packageJSON.contributes.configuration.properties;
+    const useInteractiveMode = properties['quickmix.useInteractiveMode'];
+
+    assert.ok(useInteractiveMode, 'useInteractiveMode property should exist');
+    assert.equal(useInteractiveMode.type, 'boolean', 'useInteractiveMode should be boolean');
+    assert.equal(useInteractiveMode.default, false, 'useInteractiveMode should default to false');
+    assert.ok(
+      useInteractiveMode.description.includes('interactive REPL mode'),
+      'useInteractiveMode should have descriptive text'
+    );
+  });
+
+  test('should have psyshPath configuration property', async () => {
+    const properties = extension.packageJSON.contributes.configuration.properties;
+    const psyshPath = properties['quickmix.psyshPath'];
+
+    assert.ok(psyshPath, 'psyshPath property should exist');
+    assert.equal(psyshPath.type, 'string', 'psyshPath should be string');
+    assert.equal(psyshPath.default, '', 'psyshPath should default to empty string');
+    assert.ok(
+      psyshPath.description.includes('PsySH .phar file'),
+      'psyshPath should have descriptive text'
+    );
+  });
+
+  test('should have sessionTimeout configuration property', async () => {
+    const properties = extension.packageJSON.contributes.configuration.properties;
+    const sessionTimeout = properties['quickmix.sessionTimeout'];
+
+    assert.ok(sessionTimeout, 'sessionTimeout property should exist');
+    assert.equal(sessionTimeout.type, 'number', 'sessionTimeout should be number');
+    assert.equal(sessionTimeout.default, 300000, 'sessionTimeout should default to 300000');
+    assert.ok(
+      sessionTimeout.description.includes('timeout in milliseconds'),
+      'sessionTimeout should have descriptive text'
+    );
+  });
+
+  test('should be able to read configuration values', async () => {
+    const config = vscode.workspace.getConfiguration('quickmix');
+
+    assert.doesNotThrow(
+      () => config.get('useInteractiveMode'),
+      'Should be able to read useInteractiveMode'
+    );
+    assert.doesNotThrow(() => config.get('psyshPath'), 'Should be able to read psyshPath');
+    assert.doesNotThrow(
+      () => config.get('sessionTimeout'),
+      'Should be able to read sessionTimeout'
+    );
+  });
+
+  test('should have correct default configuration values', async () => {
+    const config = vscode.workspace.getConfiguration('quickmix');
+
+    assert.equal(
+      config.get('useInteractiveMode'),
+      false,
+      'useInteractiveMode should default to false'
+    );
+    assert.equal(config.get('psyshPath'), '', 'psyshPath should default to empty string');
+    assert.equal(config.get('sessionTimeout'), 300000, 'sessionTimeout should default to 300000');
+  });
 });
