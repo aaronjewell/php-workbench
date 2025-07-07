@@ -16,7 +16,7 @@ A **step** is a set of actions that takes the codebase from one deliverable stat
 - **Non-Regression**: Cannot make the extension worse than the previous state
 - **Minimal Size**: As small as reasonably possible given the nature of the change
 - **Test-Driven**: Follow @test-driven-development.mdc for zero-one-many approach and @testing-standards.mdc for implementation
-- **Complete**: Must pass `vscode:prepublish` npm script before considering step complete
+- **Complete**: Must pass `test` npm script before considering step complete
 
 ### Step Characteristics
 - ✅ **Does not need to improve extension value** - maintenance and refactoring steps are valid
