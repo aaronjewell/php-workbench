@@ -52,17 +52,18 @@ suite('Extension Test Suite', () => {
     const activeEditor = vscode.window.activeTextEditor;
     assert.ok(activeEditor, 'Should have an active editor');
     assert.ok(activeEditor!.document.languageId === 'php', 'Created document should be a PHP file');
+    assert.ok(activeEditor!.document.isUntitled, 'Created document should be untitled');
   });
 
   test('quickmix.newScratchpad command should handle errors gracefully', async () => {
     // Mock openTextDocument to throw an error
-    const originalExecuteCommand = vscode.commands.executeCommand;
+    const originalOpenTextDocument = vscode.workspace.openTextDocument;
     const originalShowErrorMessage = vscode.window.showErrorMessage;
     let errorMessageShown = false;
     let errorMessage = '';
 
-    vscode.commands.executeCommand = async () => {
-      throw new Error('Command execution error');
+    vscode.workspace.openTextDocument = async () => {
+      throw new Error('Document creation error');
     };
 
     vscode.window.showErrorMessage = async (message: string) => {
@@ -72,7 +73,7 @@ suite('Extension Test Suite', () => {
     };
 
     try {
-      await originalExecuteCommand('quickmix.newScratchpad');
+      await vscode.commands.executeCommand('quickmix.newScratchpad');
 
       assert.ok(errorMessageShown, 'Should display error message to user');
       assert.ok(
@@ -81,7 +82,7 @@ suite('Extension Test Suite', () => {
       );
     } finally {
       // Restore original functions
-      vscode.commands.executeCommand = originalExecuteCommand;
+      vscode.workspace.openTextDocument = originalOpenTextDocument;
       vscode.window.showErrorMessage = originalShowErrorMessage;
     }
   });

@@ -110,9 +110,11 @@ export function activate(context: vscode.ExtensionContext) {
   // The commandId parameter must match the command field in package.json
   const disposable = vscode.commands.registerCommand('quickmix.newScratchpad', async () => {
     try {
-      await vscode.commands.executeCommand('workbench.action.files.newUntitledFile', {
-        languageId: 'php',
+      const document = await vscode.workspace.openTextDocument({
+        language: 'php',
+        content: '<?php\n\n',
       });
+      await vscode.window.showTextDocument(document);
     } catch (error) {
       await vscode.window.showErrorMessage(`Failed to create scratchpad: ${error}`);
     }
