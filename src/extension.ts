@@ -1,9 +1,6 @@
 // The module 'vscode' contains the VS Code extensibility API
 import * as vscode from 'vscode';
-import { exec, spawn } from 'child_process';
-import { promisify } from 'util';
-
-const execAsync = promisify(exec);
+import { spawn } from 'child_process';
 
 // Global output channel for displaying results
 let outputChannel: vscode.OutputChannel;
