@@ -53,6 +53,21 @@ suite('Extension Test Suite', () => {
     assert.ok(activeEditor, 'Should have an active editor');
     assert.ok(activeEditor!.document.languageId === 'php', 'Created document should be a PHP file');
     assert.ok(activeEditor!.document.isUntitled, 'Created document should be untitled');
+
+    // Verify starter content exists
+    const content = activeEditor!.document.getText();
+    assert.ok(content.includes('<?php'), 'Should contain PHP opening tag');
+
+    // Verify cursor is positioned at the end of the content
+    const cursorPosition = activeEditor!.selection.active;
+    const endPosition = activeEditor!.document.positionAt(activeEditor!.document.getText().length);
+
+    assert.strictEqual(cursorPosition.line, endPosition.line, 'Cursor should be at the last line');
+    assert.strictEqual(
+      cursorPosition.character,
+      endPosition.character,
+      'Cursor should be at the end of the last line'
+    );
   });
 
   test('quickmix.newScratchpad command should handle errors gracefully', async () => {

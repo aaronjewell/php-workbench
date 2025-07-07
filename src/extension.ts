@@ -114,7 +114,11 @@ export function activate(context: vscode.ExtensionContext) {
         language: 'php',
         content: '<?php\n\n',
       });
-      await vscode.window.showTextDocument(document);
+      const editor = await vscode.window.showTextDocument(document);
+
+      // Position cursor at the end of the file
+      const endPosition = editor.document.positionAt(editor.document.getText().length);
+      editor.selection = new vscode.Selection(endPosition, endPosition);
     } catch (error) {
       await vscode.window.showErrorMessage(`Failed to create scratchpad: ${error}`);
     }
