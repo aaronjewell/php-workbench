@@ -1,6 +1,6 @@
 // The module 'vscode' contains the VS Code extensibility API
 import * as vscode from 'vscode';
-import { exec } from 'child_process';
+import { exec, spawn } from 'child_process';
 import { promisify } from 'util';
 
 const execAsync = promisify(exec);
@@ -68,27 +68,56 @@ async function executePhpCode(code: string): Promise<ExecutionResult> {
     }
 
     // Prepare PHP code for execution
-    // Remove <?php tags since php -r runs code directly in PHP context
+    // For stdin execution, we keep the <?php tag if present
     let phpCode = code.trim();
-    if (phpCode.startsWith('<?php')) {
-      phpCode = phpCode.substring(5).trim();
+    if (!phpCode.startsWith('<?php')) {
+      phpCode = '<?php\n' + phpCode;
     }
 
-    // Execute PHP code using php -r (run code inline)
-    const { stdout, stderr } = await execAsync(`php -r "${phpCode.replace(/"/g, '\\"')}"`);
+    // Execute PHP code by piping to stdin
+    return new Promise<ExecutionResult>(resolve => {
+      const phpProcess = spawn('php', [], {
+        stdio: ['pipe', 'pipe', 'pipe'],
+      });
 
-    if (stderr) {
-      return {
-        output: '',
-        error: stderr,
-        success: false,
-      };
-    }
+      let stdout = '';
+      let stderr = '';
 
-    return {
-      output: stdout,
-      success: true,
-    };
+      phpProcess.stdout.on('data', data => {
+        stdout += data.toString();
+      });
+
+      phpProcess.stderr.on('data', data => {
+        stderr += data.toString();
+      });
+
+      phpProcess.on('close', exitCode => {
+        if (exitCode !== 0 || stderr) {
+          resolve({
+            output: '',
+            error: stderr || `PHP process exited with code ${exitCode}`,
+            success: false,
+          });
+        } else {
+          resolve({
+            output: stdout,
+            success: true,
+          });
+        }
+      });
+
+      phpProcess.on('error', error => {
+        resolve({
+          output: '',
+          error: error.message || 'Failed to start PHP process',
+          success: false,
+        });
+      });
+
+      // Write the PHP code to stdin and close it
+      phpProcess.stdin.write(phpCode);
+      phpProcess.stdin.end();
+    });
   } catch (error: any) {
     return {
       output: '',
