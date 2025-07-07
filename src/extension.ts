@@ -52,8 +52,9 @@ function displayResult(result: ExecutionResult): void {
  */
 async function executePhpCode(code: string): Promise<ExecutionResult> {
   try {
-    // Handle empty code
-    if (!code.trim()) {
+    let phpCode = code.trim();
+
+    if (!phpCode) {
       return {
         output: '',
         success: true,
@@ -62,7 +63,7 @@ async function executePhpCode(code: string): Promise<ExecutionResult> {
 
     // Prepare PHP code for execution
     // For stdin execution, we keep the <?php tag if present
-    let phpCode = code.trim();
+    // We would drop the tag if using the command line `php -r`
     if (!phpCode.startsWith('<?php')) {
       phpCode = '<?php\n' + phpCode;
     }
