@@ -1,20 +1,20 @@
 {
-    "name": "aaronjewell/quickmix",
-    "description": "Quickly test PHP code snippets within your project context. No need to create temporary files or switch to terminal - just write PHP code and hit Ctrl+Enter to see results instantly with full access to your Composer dependencies.",
-    "type": "project",
-    "require": {
-        "psy/psysh": "^0.12.9"
-    },
-    "autoload": {
-        "psr-4": {
-            "QuickMix\\": "src/"
-        }
-    },
-    "license": "MIT",
-    "authors": [
-        {
-            "name": "Aaron Jewell",
-            "email": "me@aaronjewell.dev"
-        }
-    ]
+  "name": "aaronjewell/quickmix",
+  "description": "Quickly test PHP code snippets within your project context. No need to create temporary files or switch to terminal - just write PHP code and hit Ctrl+Enter to see results instantly with full access to your Composer dependencies.",
+  "type": "project",
+  "require": {
+    "psy/psysh": "^0.12.9"
+  },
+  "autoload": {
+    "psr-4": {
+      "QuickMix\\": "src/"
+    }
+  },
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Aaron Jewell",
+      "email": "me@aaronjewell.dev"
+    }
+  ]
 }
