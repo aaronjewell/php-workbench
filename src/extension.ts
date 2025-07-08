@@ -1,376 +1,75 @@
 // The module 'vscode' contains the VS Code extensibility API
 import * as vscode from 'vscode';
-import { spawn } from 'child_process';
-import * as path from 'path';
-import * as fs from 'fs';
-import * as https from 'https';
+import { spawn, ChildProcessWithoutNullStreams } from 'child_process';
+import {
+  createMessageConnection,
+  StreamMessageReader,
+  StreamMessageWriter,
+  RequestType,
+  MessageConnection,
+} from 'vscode-jsonrpc/node';
 
-// Global output channel for displaying results
-let outputChannel: vscode.OutputChannel;
+type EvalResponse = {
+  stdout: string;
+  returnValue: string;
+};
 
-/**
- * Represents the result of PHP code execution
- */
-export interface ExecutionResult {
-  /** The output from successful code execution */
-  output: string;
-  /** Any error messages from failed execution */
+export type ExecuteCodeResponse = {
+  result?: EvalResponse;
   error?: string;
-  /** Whether the execution was successful */
-  success: boolean;
-}
+};
 
-/**
- * Manages PsySH .phar file operations
- */
-export interface PsyShManager {
-  /** Get the path to the PsySH .phar file */
-  getPsyShPath(): Promise<string>;
-  /** Check if PsySH .phar file exists */
-  psyShExists(): Promise<boolean>;
-  /** Download PsySH .phar file if needed */
-  ensurePsyShAvailable(): Promise<string>;
-}
+const EvalRequest = new RequestType<string, EvalResponse, void>('eval');
 
-/**
- * Implementation of PsySH .phar file management
- */
-export class PsyShManagerImpl implements PsyShManager {
-  private readonly context: vscode.ExtensionContext;
-
-  constructor(context: vscode.ExtensionContext) {
-    this.context = context;
-  }
-
-  async getPsyShPath(): Promise<string> {
-    const config = vscode.workspace.getConfiguration('quickmix');
-    const customPath = config.get<string>('psyshPath');
-
-    if (customPath && customPath.trim()) {
-      return customPath.trim();
-    }
-
-    // Default to extension storage path
-    return path.join(this.context.globalStorageUri.fsPath, 'psysh.phar');
-  }
-
-  async psyShExists(): Promise<boolean> {
-    try {
-      const psyshPath = await this.getPsyShPath();
-      await fs.promises.access(psyshPath, fs.constants.F_OK);
-      return true;
-    } catch {
-      return false;
-    }
-  }
-
-  async ensurePsyShAvailable(): Promise<string> {
-    const psyshPath = await this.getPsyShPath();
-
-    if (await this.psyShExists()) {
-      return psyshPath;
-    }
-
-    // Download PsySH if it doesn't exist
-    await this.downloadPsySH(psyshPath);
-    return psyshPath;
-  }
-
-  /**
-   * Downloads PsySH .phar file from the official source
-   *
-   * Why: Provides seamless setup without requiring manual PsySH installation
-   *
-   * @param targetPath - Local file path where PsySH should be saved
-   */
-  private async downloadPsySH(targetPath: string): Promise<void> {
-    const psyshUrl = 'https://psysh.org/psysh';
-
-    // Ensure the directory exists
-    const dir = path.dirname(targetPath);
-    await fs.promises.mkdir(dir, { recursive: true });
-
-    return new Promise((resolve, reject) => {
-      const file = fs.createWriteStream(targetPath);
-
-      https
-        .get(psyshUrl, response => {
-          if (response.statusCode !== 200) {
-            reject(new Error(`Failed to download PsySH: HTTP ${response.statusCode}`));
-            return;
-          }
-
-          response.pipe(file);
-
-          file.on('finish', () => {
-            file.close();
-            // Make the .phar file executable
-            fs.chmod(targetPath, '755', err => {
-              if (err) {
-                reject(err);
-              } else {
-                resolve();
-              }
-            });
-          });
-
-          file.on('error', err => {
-            fs.unlink(targetPath, () => {}); // Clean up on error
-            reject(err);
-          });
-        })
-        .on('error', err => {
-          reject(err);
-        });
-    });
-  }
-}
+let outputChannel: vscode.OutputChannel;
+let connection: MessageConnection;
+let php: ChildProcessWithoutNullStreams;
 
 /**
  * Displays execution results in the QuickMix output panel
  *
  * @param result - The execution result to display
  */
-function displayResult(result: ExecutionResult): void {
+function displayResult(result: ExecuteCodeResponse): void {
   if (!outputChannel) {
     outputChannel = vscode.window.createOutputChannel('QuickMix');
   }
 
   // Clear previous output and add timestamp
   outputChannel.clear();
-  outputChannel.appendLine(`--- QuickMix Execution (${new Date().toLocaleTimeString()}) ---`);
+  outputChannel.appendLine(
+    `--- QuickMix Execution (${new Date().toLocaleTimeString()}): ${result.result ? 'Success' : 'Error'} ---`
+  );
 
-  if (result.success) {
-    if (result.output) {
-      outputChannel.appendLine('Output:');
-      outputChannel.appendLine(result.output);
-    } else {
-      outputChannel.appendLine('Execution completed successfully (no output)');
-    }
-  } else {
-    outputChannel.appendLine('Error:');
-    outputChannel.appendLine(result.error || 'Unknown error occurred');
-  }
+  outputChannel.appendLine(JSON.stringify(result.result || result.error));
 
   outputChannel.appendLine('--- End ---');
   outputChannel.show(true); // preserveFocus: true keeps focus on editor
 }
 
-/**
- * Executes PHP code using the system PHP interpreter
- */
-async function executePhpCode(code: string): Promise<ExecutionResult> {
-  try {
-    let phpCode = code.trim();
-
-    if (!phpCode) {
-      return {
-        output: '',
-        success: true,
-      };
-    }
-
-    // Prepare PHP code for execution
-    // For stdin execution, we keep the <?php tag if present
-    // We would drop the tag if using the command line `php -r`
-    if (!phpCode.startsWith('<?php')) {
-      phpCode = '<?php\n' + phpCode;
-    }
-
-    // Execute PHP code by piping to stdin
-    return new Promise<ExecutionResult>(resolve => {
-      const phpProcess = spawn('php', [], {
-        stdio: ['pipe', 'pipe', 'pipe'],
-      });
-
-      let stdout = '';
-      let stderr = '';
-
-      phpProcess.stdout.on('data', data => {
-        stdout += data.toString();
-      });
-
-      phpProcess.stderr.on('data', data => {
-        stderr += data.toString();
-      });
-
-      phpProcess.on('close', exitCode => {
-        if (exitCode !== 0 || stderr) {
-          resolve({
-            output: '',
-            error: stderr || `PHP process exited with code ${exitCode}`,
-            success: false,
-          });
-        } else {
-          resolve({
-            output: stdout,
-            success: true,
-          });
-        }
-      });
-
-      phpProcess.on('error', error => {
-        resolve({
-          output: '',
-          error: error.message || 'Failed to start PHP process',
-          success: false,
-        });
-      });
-
-      // Write the PHP code to stdin and close it
-      phpProcess.stdin.write(phpCode);
-      phpProcess.stdin.end();
-    });
-  } catch (error: any) {
-    return {
-      output: '',
-      error: error.message || 'PHP execution failed',
-      success: false,
-    };
-  }
-}
-
-/**
- * Manages interactive PsySH session
- */
-export interface PHPInteractiveSession {
-  /** Start the interactive session */
-  start(): Promise<void>;
-  /** Execute PHP code in the session */
-  executeCode(code: string): Promise<ExecutionResult>;
-  /** Stop the interactive session */
-  stop(): Promise<void>;
-  /** Check if session is running */
-  isRunning(): boolean;
-  /** Restart the session */
-  restart(): Promise<void>;
-}
-
-/**
- * Implementation of interactive PsySH session management
- */
-export class PHPInteractiveSessionImpl implements PHPInteractiveSession {
-  private process: any = null;
-  private readonly psyshManager: PsyShManager;
-  private readonly workspaceRoot: string;
-
-  constructor(psyshManager: PsyShManager, workspaceRoot: string) {
-    this.psyshManager = psyshManager;
-    this.workspaceRoot = workspaceRoot;
+function createPhpConnection(context: vscode.ExtensionContext): MessageConnection {
+  if (php && !php.killed) {
+    php.kill('SIGKILL');
   }
 
-  async start(): Promise<void> {
-    if (this.isRunning()) {
-      return; // Already running
-    }
+  php = spawn('php', [context.asAbsolutePath('worker.php')], {
+    stdio: ['pipe', 'pipe', 'pipe'],
+  });
 
-    const psyshPath = await this.psyshManager.ensurePsyShAvailable();
+  const conn = createMessageConnection(
+    new StreamMessageReader(php.stdout),
+    new StreamMessageWriter(php.stdin)
+  );
+  conn.listen();
 
-    // Spawn PsySH process with proper working directory and environment
-    this.process = spawn('php', [psyshPath], {
-      cwd: this.workspaceRoot,
-      stdio: ['pipe', 'pipe', 'pipe'],
-      env: { ...process.env }, // Preserve environment variables including PATH
-    });
+  php.once('exit', (code, signal) => {
+    // TODO: Handle the ways that it can exit differently based on the signal and code
+    console.warn(`PHP worker exited (${signal ?? code}); respawning`);
+    connection.dispose(); // flush pending promises
+    connection = createPhpConnection(context); // transparent restart
+  });
 
-    // Set up error handling for the process
-    this.process.on('error', (error: Error) => {
-      console.error('PsySH process error:', error);
-      this.process = null;
-    });
-
-    this.process.on('exit', (code: number) => {
-      console.log('PsySH process exited with code:', code);
-      this.process = null;
-    });
-
-    // Wait a bit for the process to start up
-    await new Promise(resolve => setTimeout(resolve, 100));
-  }
-
-  async executeCode(code: string): Promise<ExecutionResult> {
-    if (!this.isRunning()) {
-      await this.start();
-    }
-
-    if (!this.process || !this.process.stdin) {
-      return {
-        output: '',
-        error: 'PsySH process not available',
-        success: false,
-      };
-    }
-
-    return new Promise(resolve => {
-      let output = '';
-      let errorOutput = '';
-
-      // Set up data listeners for this execution
-      const onData = (data: Buffer) => {
-        output += data.toString();
-      };
-
-      const onError = (data: Buffer) => {
-        errorOutput += data.toString();
-      };
-
-      this.process.stdout.on('data', onData);
-      this.process.stderr.on('data', onError);
-
-      // Send the code to PsySH
-      this.process.stdin.write(code + '\n');
-
-      // Wait for response (simplified - in real implementation would need better parsing)
-      setTimeout(() => {
-        this.process.stdout.removeListener('data', onData);
-        this.process.stderr.removeListener('data', onError);
-
-        if (errorOutput) {
-          resolve({
-            output: '',
-            error: errorOutput,
-            success: false,
-          });
-        } else {
-          resolve({
-            output: output || 'Code executed successfully',
-            success: true,
-          });
-        }
-      }, 1000); // Give PsySH time to process
-    });
-  }
-
-  async stop(): Promise<void> {
-    if (this.process) {
-      // Gracefully close stdin first
-      if (this.process.stdin) {
-        this.process.stdin.end();
-      }
-
-      // Try graceful termination first
-      this.process.kill('SIGTERM');
-
-      // Wait a bit for graceful shutdown
-      await new Promise(resolve => setTimeout(resolve, 100));
-
-      // Force kill if still running
-      if (this.process && !this.process.killed) {
-        this.process.kill('SIGKILL');
-      }
-
-      this.process = null;
-    }
-  }
-
-  isRunning(): boolean {
-    return this.process !== null && !this.process.killed;
-  }
-
-  async restart(): Promise<void> {
-    await this.stop();
-    await this.start();
-  }
+  return conn;
 }
 
 // This method is called when your extension is activated
@@ -402,16 +101,28 @@ export function activate(context: vscode.ExtensionContext) {
     }
   );
 
+  const restartSessionCommand = vscode.commands.registerCommand(
+    'quickmix.restartSession',
+    async (): Promise<void> => {
+      // Kill the worker gracefully, and allow it to restart
+      if (php.kill('SIGTERM')) {
+        vscode.window.showInformationMessage('QuickMix: Session restarted');
+      } else {
+        if (php.kill('SIGKILL')) {
+          vscode.window.showInformationMessage('QuickMix: Session restarted');
+        } else {
+          vscode.window.showErrorMessage('QuickMix: Failed to restart session');
+        }
+      }
+    }
+  );
+
   const executeCommand = vscode.commands.registerCommand(
     'quickmix.executeCode',
-    async (): Promise<ExecutionResult> => {
+    async (): Promise<ExecuteCodeResponse> => {
       const editor = vscode.window.activeTextEditor;
       if (!editor) {
-        return {
-          output: '',
-          error: 'No active editor found',
-          success: false,
-        };
+        return { error: 'No active editor' };
       }
 
       try {
@@ -419,27 +130,32 @@ export function activate(context: vscode.ExtensionContext) {
           ? editor.document.getText(editor.selection)
           : editor.document.getText();
 
-        const result = await executePhpCode(code);
-        displayResult(result);
-        return result;
-      } catch (error) {
-        const errorResult = {
-          output: '',
-          error: `Execution failed: ${error}`,
-          success: false,
-        };
-        displayResult(errorResult);
-        return errorResult;
+        const result = await connection.sendRequest(EvalRequest, code);
+        displayResult({ result });
+        return { result };
+      } catch (err: any) {
+        const message = err instanceof Error ? err.message : String(err);
+        displayResult({ error: message });
+        return { error: message };
       }
     }
   );
 
-  context.subscriptions.push(newScratchpadCommand, executeCommand);
+  connection = createPhpConnection(context);
+
+  context.subscriptions.push(newScratchpadCommand, executeCommand, restartSessionCommand);
 }
 
 // This method is called when your extension is deactivated
 export function deactivate() {
   if (outputChannel) {
     outputChannel.dispose();
+  }
+
+  if (php) {
+    const success = php.kill();
+    if (!success) {
+      php.kill('SIGKILL');
+    }
   }
 }
