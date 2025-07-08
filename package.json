@@ -20,6 +20,10 @@
       {
         "command": "quickmix.executeCode",
         "title": "QuickMix: Execute Code"
+      },
+      {
+        "command": "quickmix.restartSession",
+        "title": "QuickMix: Restart Session"
       }
     ],
     "keybindings": [
@@ -78,5 +82,8 @@
     "eslint": "^9.25.1",
     "prettier": "^3.6.2",
     "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "vscode-jsonrpc": "^8.2.1"
   }
 }
