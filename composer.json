@@ -1,6 +1,6 @@
 {
   "name": "aaronjewell/php-workbench",
-  "description": "A dedicated workspace for PHP development and experimentation. Test PHP code snippets instantly within your project context with full access to Composer dependencies - no temporary files or terminal switching required.",
+  "description": "A dedicated workspace for PHP development and experimentation. Test PHP code snippets instantly - no temporary files or terminal switching required.",
   "type": "project",
   "require": {
     "psy/psysh": "^0.12.9"

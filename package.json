@@ -1,7 +1,7 @@
 {
   "name": "php-workbench",
   "displayName": "PHP Workbench",
-  "description": "A dedicated workspace for PHP development and experimentation. Test PHP code snippets instantly within your project context with full access to Composer dependencies - no temporary files or terminal switching required.",
+  "description": "A dedicated workspace for PHP development and experimentation. Test PHP code snippets instantly - no temporary files or terminal switching required.",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.99.3"
@@ -9,6 +9,11 @@
   "categories": [
     "Other"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/aaronjewell/php-workbench"
+  },
+  "publisher": "aaronjewell",
   "activationEvents": [],
   "main": "./out/extension.js",
   "contributes": {
@@ -24,6 +29,10 @@
       {
         "command": "phpWorkbench.restartSession",
         "title": "PHP Workbench: Restart Session"
+      },
+      {
+        "command": "phpWorkbench.reportIssue",
+        "title": "PHP Workbench: Report Issue"
       }
     ],
     "keybindings": [
@@ -39,6 +48,13 @@
         "when": "editorTextFocus && resourceLangId == php"
       }
     ],
+    "menus": {
+      "issue/reporter": [
+        {
+          "command": "phpWorkbench.reportIssue"
+        }
+      ]
+    },
     "configuration": {
       "type": "object",
       "title": "PHP Workbench",
@@ -75,7 +91,7 @@
   "devDependencies": {
     "@types/mocha": "^10.0.10",
     "@types/node": "20.x",
-    "@types/vscode": "^1.101.0",
+    "@types/vscode": "^1.99.3",
     "@typescript-eslint/eslint-plugin": "^8.31.1",
     "@typescript-eslint/parser": "^8.31.1",
     "@vscode/test-cli": "^0.0.11",
