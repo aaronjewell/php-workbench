@@ -11,7 +11,7 @@ suite('Extension Test Suite', () => {
   let extension: vscode.Extension<any>;
 
   setup(async () => {
-    extension = vscode.extensions.getExtension('undefined_publisher.php-workbench')!;
+    extension = vscode.extensions.getExtension('aaronjewell.php-workbench')!;
     assert.ok(extension);
     await extension.activate();
   });
