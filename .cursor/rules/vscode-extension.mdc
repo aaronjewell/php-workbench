@@ -12,7 +12,7 @@ Use this template for consistent extension structure:
 
 ## Command Registration
 - Command IDs must match package.json contributions
-- Use descriptive command names: `quickmix.createScratchpad` not `quickmix.create`
+- Use descriptive command names: `phpWorkbench.createScratchpad` not `phpWorkbench.create`
 - Register keyboard shortcuts in package.json contributions
 - Provide both command palette and keyboard access
 
@@ -44,7 +44,7 @@ Use this template for consistent extension structure:
 ```typescript
 export function activate(context: vscode.ExtensionContext) {
   const disposable = vscode.commands.registerCommand(
-    'quickmix.createScratchpad',
+    'phpWorkbench.createScratchpad',
     createScratchpadHandler
   );
   context.subscriptions.push(disposable);

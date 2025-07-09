@@ -73,7 +73,7 @@ chore(deps): update @types/vscode to latest version
 ✅ add format:check to vscode:prepublish script
 ✅ install prettier and add formatting configuration  
 ✅ add try-catch blocks to executeCode method
-✅ add quickmix.newScratchpad command registration
+✅ add phpWorkbench.newScratchpad command registration
 ✅ create CodeExecutor class with execute method
 ✅ add timeout parameter to PHP execution
 ```

@@ -1,12 +1,12 @@
 ---
 alwaysApply: true
-description: "QuickMix project structure and organization"
+description: "PHP Workbench project structure and organization"
 ---
 
-# QuickMix Project Structure
+# PHP Workbench Project Structure
 
 ## Overview
-QuickMix is a VSCode extension that enables PHP developers to quickly test code snippets with full Composer dependency access.
+PHP Workbench is a VSCode extension that enables PHP developers to quickly test code snippets with full Composer dependency access.
 
 ## Core Files
 - **Entry Point**: @../../src/extension.ts - Main activation and command registration
@@ -24,7 +24,7 @@ QuickMix is a VSCode extension that enables PHP developers to quickly test code 
 2. **Instant Execution**: Ctrl+Enter to run PHP code
 3. **Composer Integration**: Automatic vendor/autoload.php inclusion
 4. **Error Display**: Clear error messages with line numbers
-5. **Output Panel**: Dedicated QuickMix output channel
+5. **Output Panel**: Dedicated PHP Workbench output channel
 
 ## Development Workflow
 1. Write tests first

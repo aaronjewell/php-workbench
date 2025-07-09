@@ -6,7 +6,7 @@ description: "PHP development context and best practices"
 # PHP Development Context
 
 ## PHP Environment Understanding
-QuickMix targets PHP developers who work with:
+PHP Workbench targets PHP developers who work with:
 - **Composer Dependencies**: Projects using vendor/autoload.php
 - **Modern PHP**: PHP 7.4+ with object-oriented practices
 - **Framework Usage**: Laravel, Symfony, or other Composer-based frameworks
@@ -27,7 +27,7 @@ QuickMix targets PHP developers who work with:
 ## Example PHP Code Patterns
 ```php
 <?php
-// QuickMix should automatically include this
+// PHP Workbench should automatically include this
 require_once 'vendor/autoload.php';
 
 // Support for modern PHP features

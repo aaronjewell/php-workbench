@@ -1,7 +1,7 @@
 {
-  "name": "quickmix",
-  "displayName": "QuickMix",
-  "description": "Quickly test PHP code snippets within your project context. No need to create temporary files or switch to terminal - just write PHP code and hit Ctrl+Enter to see results instantly with full access to your Composer dependencies.",
+  "name": "php-workbench",
+  "displayName": "PHP Workbench",
+  "description": "A dedicated workspace for PHP development and experimentation. Test PHP code snippets instantly within your project context with full access to Composer dependencies - no temporary files or terminal switching required.",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.99.3"
@@ -14,26 +14,26 @@
   "contributes": {
     "commands": [
       {
-        "command": "quickmix.newScratchpad",
-        "title": "QuickMix: New Scratchpad"
+        "command": "phpWorkbench.newScratchpad",
+        "title": "PHP Workbench: New Scratchpad"
       },
       {
-        "command": "quickmix.executeCode",
-        "title": "QuickMix: Execute Code"
+        "command": "phpWorkbench.executeCode",
+        "title": "PHP Workbench: Execute Code"
       },
       {
-        "command": "quickmix.restartSession",
-        "title": "QuickMix: Restart Session"
+        "command": "phpWorkbench.restartSession",
+        "title": "PHP Workbench: Restart Session"
       }
     ],
     "keybindings": [
       {
-        "command": "quickmix.newScratchpad",
+        "command": "phpWorkbench.newScratchpad",
         "key": "ctrl+alt+n",
         "mac": "cmd+alt+n"
       },
       {
-        "command": "quickmix.executeCode",
+        "command": "phpWorkbench.executeCode",
         "key": "ctrl+enter",
         "mac": "cmd+enter",
         "when": "editorTextFocus && resourceLangId == php"
@@ -41,19 +41,19 @@
     ],
     "configuration": {
       "type": "object",
-      "title": "QuickMix",
+      "title": "PHP Workbench",
       "properties": {
-        "quickmix.useInteractiveMode": {
+        "phpWorkbench.useInteractiveMode": {
           "type": "boolean",
           "default": false,
           "description": "Enable interactive REPL mode with persistent PHP session using PsySH"
         },
-        "quickmix.psyshPath": {
+        "phpWorkbench.psyshPath": {
           "type": "string",
           "default": "",
           "description": "Custom path to PsySH .phar file (leave empty to use bundled version)"
         },
-        "quickmix.sessionTimeout": {
+        "phpWorkbench.sessionTimeout": {
           "type": "number",
           "default": 300000,
           "description": "Session timeout in milliseconds (300000 = 5 minutes)"

@@ -7,12 +7,12 @@ import * as vscode from 'vscode';
 export function activate(context: vscode.ExtensionContext) {
   // Register commands
   const createScratchpadCommand = vscode.commands.registerCommand(
-    'quickmix.createScratchpad',
+    'phpWorkbench.createScratchpad',
     createScratchpadHandler
   );
 
   const executeCodeCommand = vscode.commands.registerCommand(
-    'quickmix.executeCode',
+    'phpWorkbench.executeCode',
     executeCodeHandler
   );
 
@@ -20,7 +20,7 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(createScratchpadCommand, executeCodeCommand);
 
   // Initialize services if needed
-  // const outputChannel = vscode.window.createOutputChannel('QuickMix');
+  // const outputChannel = vscode.window.createOutputChannel('PHP Workbench');
   // context.subscriptions.push(outputChannel);
 }
 

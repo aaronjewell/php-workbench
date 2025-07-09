@@ -11,46 +11,46 @@ suite('Extension Test Suite', () => {
   let extension: vscode.Extension<any>;
 
   setup(async () => {
-    extension = vscode.extensions.getExtension('undefined_publisher.quickmix')!;
+    extension = vscode.extensions.getExtension('undefined_publisher.php-workbench')!;
     assert.ok(extension);
     await extension.activate();
   });
 
-  test('vscode should be able to get quickmix configuration', async () => {
-    assert.ok(vscode.workspace.getConfiguration('quickmix'));
+  test('vscode should be able to get phpWorkbench configuration', async () => {
+    assert.ok(vscode.workspace.getConfiguration('phpWorkbench'));
   });
 
-  test('quickmix should have configuration properties defined in package.json', async () => {
+  test('phpWorkbench should have configuration properties defined in package.json', async () => {
     const config = extension.packageJSON.contributes.configuration;
 
     assert.ok(config);
     assert.equal(config.type, 'object');
-    assert.equal(config.title, 'QuickMix');
+    assert.equal(config.title, 'PHP Workbench');
     assert.ok(config.properties);
   });
 
-  test('quickmix.newScratchpad command should be registered', async () => {
+  test('phpWorkbench.newScratchpad command should be registered', async () => {
     const commands = await vscode.commands.getCommands(true);
 
-    assert.ok(commands.includes('quickmix.newScratchpad'));
+    assert.ok(commands.includes('phpWorkbench.newScratchpad'));
   });
 
-  test('quickmix.newScratchpad command should be defined as keyboard shortcut in package.json', async () => {
+  test('phpWorkbench.newScratchpad command should be defined as keyboard shortcut in package.json', async () => {
     const keybindings = await extension.packageJSON.contributes.keybindings;
 
-    const quickmixKeybinding = keybindings.find(
-      (kb: any) => kb.command === 'quickmix.newScratchpad'
+    const phpWorkbenchKeybinding = keybindings.find(
+      (kb: any) => kb.command === 'phpWorkbench.newScratchpad'
     );
 
-    assert.ok(quickmixKeybinding);
-    assert.equal(quickmixKeybinding.key, 'ctrl+alt+n');
-    assert.equal(quickmixKeybinding.mac, 'cmd+alt+n');
+    assert.ok(phpWorkbenchKeybinding);
+    assert.equal(phpWorkbenchKeybinding.key, 'ctrl+alt+n');
+    assert.equal(phpWorkbenchKeybinding.mac, 'cmd+alt+n');
   });
 
-  test('quickmix.newScratchpad command should create a new untitled PHP file', async () => {
+  test('phpWorkbench.newScratchpad command should create a new untitled PHP file', async () => {
     const initialEditors = vscode.window.visibleTextEditors.length;
 
-    await vscode.commands.executeCommand('quickmix.newScratchpad');
+    await vscode.commands.executeCommand('phpWorkbench.newScratchpad');
 
     assert.ok(vscode.window.visibleTextEditors.length > initialEditors);
 
@@ -71,7 +71,7 @@ suite('Extension Test Suite', () => {
     assert.strictEqual(cursorPosition.character, endPosition.character);
   });
 
-  test('quickmix.newScratchpad command should handle errors gracefully', async () => {
+  test('phpWorkbench.newScratchpad command should handle errors gracefully', async () => {
     // Mock openTextDocument to throw an error
     const originalOpenTextDocument = vscode.workspace.openTextDocument;
     const originalShowErrorMessage = vscode.window.showErrorMessage;
@@ -89,7 +89,7 @@ suite('Extension Test Suite', () => {
     };
 
     try {
-      await vscode.commands.executeCommand('quickmix.newScratchpad');
+      await vscode.commands.executeCommand('phpWorkbench.newScratchpad');
 
       assert.ok(errorMessageShown);
       assert.ok(errorMessage.includes('Failed to create scratchpad'));
@@ -100,17 +100,19 @@ suite('Extension Test Suite', () => {
     }
   });
 
-  // Tests for quickmix.executeCode command - following zero-one-many strategy
-  test('quickmix.executeCode command should be registered', async () => {
+  // Tests for phpWorkbench.executeCode command - following zero-one-many strategy
+  test('phpWorkbench.executeCode command should be registered', async () => {
     const commands = await vscode.commands.getCommands(true);
 
-    assert.ok(commands.includes('quickmix.executeCode'));
+    assert.ok(commands.includes('phpWorkbench.executeCode'));
   });
 
-  test('quickmix.executeCode command should be defined as keyboard shortcut in package.json', async () => {
+  test('phpWorkbench.executeCode command should be defined as keyboard shortcut in package.json', async () => {
     const keybindings = await extension.packageJSON.contributes.keybindings;
 
-    const executeKeybinding = keybindings.find((kb: any) => kb.command === 'quickmix.executeCode');
+    const executeKeybinding = keybindings.find(
+      (kb: any) => kb.command === 'phpWorkbench.executeCode'
+    );
 
     assert.ok(executeKeybinding);
     assert.equal(executeKeybinding.key, 'ctrl+enter');
@@ -118,101 +120,107 @@ suite('Extension Test Suite', () => {
     assert.equal(executeKeybinding.when, 'editorTextFocus && resourceLangId == php');
   });
 
-  test('quickmix.executeCode command should execute', async () => {
-    assert.doesNotThrow(() => vscode.commands.executeCommand('quickmix.executeCode'));
+  test('phpWorkbench.executeCode command should execute', async () => {
+    assert.doesNotThrow(() => vscode.commands.executeCommand('phpWorkbench.executeCode'));
   });
 
-  test('quickmix.executeCode should execute basic PHP code and return result', async () => {
+  test('phpWorkbench.executeCode should execute basic PHP code and return result', async () => {
     const document = await vscode.workspace.openTextDocument({
       content: '<?php echo "Hello World";',
       language: 'php',
     });
     await vscode.window.showTextDocument(document);
 
-    const response =
-      await vscode.commands.executeCommand<ExecuteCodeResponse>('quickmix.executeCode');
+    const response = await vscode.commands.executeCommand<ExecuteCodeResponse>(
+      'phpWorkbench.executeCode'
+    );
 
     assert.ok(response.result);
     assert.equal(response.result!.stdout, 'Hello World');
     assert.equal(response.result!.returnValue, 'NULL');
   });
 
-  test('quickmix.executeCode should handle empty PHP code', async () => {
+  test('phpWorkbench.executeCode should handle empty PHP code', async () => {
     const document = await vscode.workspace.openTextDocument({
       content: '',
       language: 'php',
     });
     await vscode.window.showTextDocument(document);
 
-    const result = await vscode.commands.executeCommand<string>('quickmix.executeCode');
+    const result = await vscode.commands.executeCommand<string>('phpWorkbench.executeCode');
     assert.ok(result);
   });
 
-  test('quickmix.executeCode should execute multiple PHP statements', async () => {
+  test('phpWorkbench.executeCode should execute multiple PHP statements', async () => {
     const document = await vscode.workspace.openTextDocument({
       content: '<?php echo "line1"; echo "line2"; echo "line3";',
       language: 'php',
     });
     await vscode.window.showTextDocument(document);
 
-    const response =
-      await vscode.commands.executeCommand<ExecuteCodeResponse>('quickmix.executeCode');
+    const response = await vscode.commands.executeCommand<ExecuteCodeResponse>(
+      'phpWorkbench.executeCode'
+    );
     assert.ok(response);
     assert.equal(response.result!.stdout, 'line1line2line3');
   });
 
-  test('quickmix.executeCode should handle PHP syntax errors', async () => {
+  test('phpWorkbench.executeCode should handle PHP syntax errors', async () => {
     const document = await vscode.workspace.openTextDocument({
       content: '<?php $a;',
       language: 'php',
     });
     await vscode.window.showTextDocument(document);
 
-    const response =
-      await vscode.commands.executeCommand<ExecuteCodeResponse>('quickmix.executeCode');
+    const response = await vscode.commands.executeCommand<ExecuteCodeResponse>(
+      'phpWorkbench.executeCode'
+    );
 
     assert.equal(response.error, 'Undefined variable $a');
     assert.equal(typeof response.result, 'undefined');
   });
 
-  test('quickmix.executeCode should execute PHP without opening tags', async () => {
+  test('phpWorkbench.executeCode should execute PHP without opening tags', async () => {
     const document = await vscode.workspace.openTextDocument({
       content: 'echo "No opening tag";',
       language: 'php',
     });
     await vscode.window.showTextDocument(document);
 
-    const response =
-      await vscode.commands.executeCommand<ExecuteCodeResponse>('quickmix.executeCode');
+    const response = await vscode.commands.executeCommand<ExecuteCodeResponse>(
+      'phpWorkbench.executeCode'
+    );
 
     assert.equal(response.result!.stdout, 'No opening tag');
     assert.equal(response.result!.returnValue, 'NULL');
   });
 
-  test('quickmix.executeCode should execute PHP without semicolon', async () => {
+  test('phpWorkbench.executeCode should execute PHP without semicolon', async () => {
     const document = await vscode.workspace.openTextDocument({
       content: 'echo "No semicolon"',
       language: 'php',
     });
     await vscode.window.showTextDocument(document);
 
-    const response =
-      await vscode.commands.executeCommand<ExecuteCodeResponse>('quickmix.executeCode');
+    const response = await vscode.commands.executeCommand<ExecuteCodeResponse>(
+      'phpWorkbench.executeCode'
+    );
 
     assert.equal(response.result!.stdout, 'No semicolon');
     assert.equal(response.result!.returnValue, 'NULL');
   });
 
   // Tests for multiline content with different line ending variations
-  test('quickmix.executeCode should execute multiline PHP with various line endings', async () => {
+  test('phpWorkbench.executeCode should execute multiline PHP with various line endings', async () => {
     // Test Unix line endings (\n)
     const unixDocument = await vscode.workspace.openTextDocument({
       content: '<?php\necho "unix1";\necho "unix2";',
       language: 'php',
     });
     await vscode.window.showTextDocument(unixDocument);
-    let response =
-      await vscode.commands.executeCommand<ExecuteCodeResponse>('quickmix.executeCode');
+    let response = await vscode.commands.executeCommand<ExecuteCodeResponse>(
+      'phpWorkbench.executeCode'
+    );
     assert.equal(response.result!.stdout, 'unix1unix2');
     assert.equal(response.result!.returnValue, 'NULL');
 
@@ -222,7 +230,9 @@ suite('Extension Test Suite', () => {
       language: 'php',
     });
     await vscode.window.showTextDocument(windowsDocument);
-    response = await vscode.commands.executeCommand<ExecuteCodeResponse>('quickmix.executeCode');
+    response = await vscode.commands.executeCommand<ExecuteCodeResponse>(
+      'phpWorkbench.executeCode'
+    );
     assert.equal(response.result!.stdout, 'windows1windows2');
     assert.equal(response.result!.returnValue, 'NULL');
 
@@ -232,15 +242,17 @@ suite('Extension Test Suite', () => {
       language: 'php',
     });
     await vscode.window.showTextDocument(macDocument);
-    response = await vscode.commands.executeCommand<ExecuteCodeResponse>('quickmix.executeCode');
+    response = await vscode.commands.executeCommand<ExecuteCodeResponse>(
+      'phpWorkbench.executeCode'
+    );
     assert.equal(response.result!.stdout, 'mac1mac2');
     assert.equal(response.result!.returnValue, 'NULL');
   });
 
-  test('quickmix.executeCode should execute complex multiline PHP with mixed statements', async () => {
+  test('phpWorkbench.executeCode should execute complex multiline PHP with mixed statements', async () => {
     const document = await vscode.workspace.openTextDocument({
       content: `<?php
-$name = "QuickMix";
+$name = "PHP Workbench";
 $version = "1.0";
 echo "Extension: " . $name;
 echo "Version: " . $version;
@@ -251,17 +263,18 @@ for ($i = 1; $i <= 3; $i++) {
     });
     await vscode.window.showTextDocument(document);
 
-    const response =
-      await vscode.commands.executeCommand<ExecuteCodeResponse>('quickmix.executeCode');
+    const response = await vscode.commands.executeCommand<ExecuteCodeResponse>(
+      'phpWorkbench.executeCode'
+    );
 
     assert.equal(
       response.result!.stdout,
-      'Extension: QuickMixVersion: 1.0Iteration: 1Iteration: 2Iteration: 3'
+      'Extension: PHP WorkbenchVersion: 1.0Iteration: 1Iteration: 2Iteration: 3'
     );
     assert.equal(response.result!.returnValue, 'NULL');
   });
 
-  test('quickmix.executeCode should handle multiline PHP with syntax errors', async () => {
+  test('phpWorkbench.executeCode should handle multiline PHP with syntax errors', async () => {
     const document = await vscode.workspace.openTextDocument({
       content: `<?php
 echo "line1";
@@ -271,8 +284,9 @@ echo "line3";`,
     });
     await vscode.window.showTextDocument(document);
 
-    const response =
-      await vscode.commands.executeCommand<ExecuteCodeResponse>('quickmix.executeCode');
+    const response = await vscode.commands.executeCommand<ExecuteCodeResponse>(
+      'phpWorkbench.executeCode'
+    );
 
     assert.equal(
       response.error,
@@ -281,7 +295,7 @@ echo "line3";`,
     assert.equal(response.result, undefined);
   });
 
-  test('quickmix.executeCode should execute PHP with complex string content and special characters', async () => {
+  test('phpWorkbench.executeCode should execute PHP with complex string content and special characters', async () => {
     const document = await vscode.workspace.openTextDocument({
       content: `<?php
 echo "String with 'single quotes' and \\"double quotes\\"";
@@ -294,8 +308,9 @@ echo "Dollar signs and \\$variable contains: $variable"`,
     });
     await vscode.window.showTextDocument(document);
 
-    const response =
-      await vscode.commands.executeCommand<ExecuteCodeResponse>('quickmix.executeCode');
+    const response = await vscode.commands.executeCommand<ExecuteCodeResponse>(
+      'phpWorkbench.executeCode'
+    );
 
     assert.ok(response.result);
     assert.equal(
@@ -304,18 +319,19 @@ echo "Dollar signs and \\$variable contains: $variable"`,
     );
   });
 
-  test('quickmix.executeCode should handle execution when no active editor', async () => {
+  test('phpWorkbench.executeCode should handle execution when no active editor', async () => {
     // Close any open editors
     await vscode.commands.executeCommand('workbench.action.closeAllEditors');
 
-    const response =
-      await vscode.commands.executeCommand<ExecuteCodeResponse>('quickmix.executeCode');
+    const response = await vscode.commands.executeCommand<ExecuteCodeResponse>(
+      'phpWorkbench.executeCode'
+    );
 
     assert.equal(response.error, 'No active editor');
   });
 
   // Tests for selection-based code execution - following zero-one-many strategy
-  test('quickmix.executeCode should execute selected PHP code when text is selected', async () => {
+  test('phpWorkbench.executeCode should execute selected PHP code when text is selected', async () => {
     const document = await vscode.workspace.openTextDocument({
       content: '<?php echo "first"; echo "selected"; echo "last";',
       language: 'php',
@@ -326,8 +342,9 @@ echo "Dollar signs and \\$variable contains: $variable"`,
     const endPos = new vscode.Position(0, 36); // end of: echo "selected";
     editor.selection = new vscode.Selection(startPos, endPos);
 
-    const response =
-      await vscode.commands.executeCommand<ExecuteCodeResponse>('quickmix.executeCode');
+    const response = await vscode.commands.executeCommand<ExecuteCodeResponse>(
+      'phpWorkbench.executeCode'
+    );
 
     assert.ok(response.result);
     assert.ok(response.result!.stdout.includes('selected'));
@@ -335,31 +352,32 @@ echo "Dollar signs and \\$variable contains: $variable"`,
     assert.ok(!response.result!.stdout.includes('last'));
   });
 
-  test('quickmix.executeCode should execute multiline selected PHP code', async () => {
+  test('phpWorkbench.executeCode should execute multiline selected PHP code', async () => {
     const document = await vscode.workspace.openTextDocument({
       content: `<?php
 echo "before";
-$name = "QuickMix";
+$name = "PHP Workbench";
 echo "Selected: " . $name;
 echo "after";`,
       language: 'php',
     });
     const editor = await vscode.window.showTextDocument(document);
 
-    const startPos = new vscode.Position(2, 0); // start of: $name = "QuickMix";
+    const startPos = new vscode.Position(2, 0); // start of: $name = "PHP Workbench";
     const endPos = new vscode.Position(3, 26); // end of: echo "Selected: " . $name;
     editor.selection = new vscode.Selection(startPos, endPos);
 
-    const response =
-      await vscode.commands.executeCommand<ExecuteCodeResponse>('quickmix.executeCode');
+    const response = await vscode.commands.executeCommand<ExecuteCodeResponse>(
+      'phpWorkbench.executeCode'
+    );
 
     assert.ok(response.result);
-    assert.ok(response.result!.stdout.includes('Selected: QuickMix'));
+    assert.ok(response.result!.stdout.includes('Selected: PHP Workbench'));
     assert.ok(!response.result!.stdout.includes('before'));
     assert.ok(!response.result!.stdout.includes('after'));
   });
 
-  test('quickmix.executeCode should execute entire document when no selection', async () => {
+  test('phpWorkbench.executeCode should execute entire document when no selection', async () => {
     const document = await vscode.workspace.openTextDocument({
       content: '<?php echo "first"; echo "second"; echo "third";',
       language: 'php',
@@ -369,8 +387,9 @@ echo "after";`,
     const cursorPos = new vscode.Position(0, 0);
     editor.selection = new vscode.Selection(cursorPos, cursorPos);
 
-    const response =
-      await vscode.commands.executeCommand<ExecuteCodeResponse>('quickmix.executeCode');
+    const response = await vscode.commands.executeCommand<ExecuteCodeResponse>(
+      'phpWorkbench.executeCode'
+    );
 
     assert.ok(response.result);
     assert.ok(response.result!.stdout.includes('first'));
@@ -378,7 +397,7 @@ echo "after";`,
     assert.ok(response.result!.stdout.includes('third'));
   });
 
-  test('quickmix.executeCode should add PHP opening tag to selected code without it', async () => {
+  test('phpWorkbench.executeCode should add PHP opening tag to selected code without it', async () => {
     const document = await vscode.workspace.openTextDocument({
       content: '<?php echo "before"; echo "selected"; echo "after";',
       language: 'php',
@@ -390,8 +409,9 @@ echo "after";`,
     const endPos = new vscode.Position(0, 37); // end of: echo "selected";
     editor.selection = new vscode.Selection(startPos, endPos);
 
-    const response =
-      await vscode.commands.executeCommand<ExecuteCodeResponse>('quickmix.executeCode');
+    const response = await vscode.commands.executeCommand<ExecuteCodeResponse>(
+      'phpWorkbench.executeCode'
+    );
 
     assert.ok(response.result);
     assert.ok(response.result!.stdout.includes('selected'));
@@ -400,19 +420,19 @@ echo "after";`,
   });
 
   // Tests for focus restoration after output display
-  test('quickmix.executeCode should keep focus on editor after displaying output', async () => {
+  test('phpWorkbench.executeCode should keep focus on editor after displaying output', async () => {
     const document = await vscode.workspace.openTextDocument({
       content: '<?php echo "test";',
       language: 'php',
     });
     const editor = await vscode.window.showTextDocument(document);
 
-    await vscode.commands.executeCommand<string>('quickmix.executeCode');
+    await vscode.commands.executeCommand<string>('phpWorkbench.executeCode');
 
     assert.strictEqual(vscode.window.activeTextEditor, editor);
   });
 
-  test('quickmix.executeCode should preserve cursor position when displaying output', async () => {
+  test('phpWorkbench.executeCode should preserve cursor position when displaying output', async () => {
     const document = await vscode.workspace.openTextDocument({
       content: '<?php echo "line1"; echo "line2";',
       language: 'php',
@@ -422,14 +442,14 @@ echo "after";`,
     const originalPosition = new vscode.Position(0, 15);
     editor.selection = new vscode.Selection(originalPosition, originalPosition);
 
-    await vscode.commands.executeCommand<string>('quickmix.executeCode');
+    await vscode.commands.executeCommand<string>('phpWorkbench.executeCode');
 
     assert.strictEqual(vscode.window.activeTextEditor, editor);
     assert.strictEqual(editor.selection.active.line, originalPosition.line);
     assert.strictEqual(editor.selection.active.character, originalPosition.character);
   });
 
-  test('quickmix.executeCode should preserve selection when displaying output', async () => {
+  test('phpWorkbench.executeCode should preserve selection when displaying output', async () => {
     const document = await vscode.workspace.openTextDocument({
       content: '<?php echo "first"; echo "selected"; echo "last";',
       language: 'php',
@@ -441,7 +461,7 @@ echo "after";`,
     const originalSelection = new vscode.Selection(startPos, endPos);
     editor.selection = originalSelection;
 
-    await vscode.commands.executeCommand<string>('quickmix.executeCode');
+    await vscode.commands.executeCommand<string>('phpWorkbench.executeCode');
 
     assert.strictEqual(vscode.window.activeTextEditor, editor);
     assert.strictEqual(editor.selection.start.line, startPos.line);
@@ -450,7 +470,7 @@ echo "after";`,
     assert.strictEqual(editor.selection.end.character, endPos.character);
   });
 
-  test('quickmix.restartSession should restart session', async () => {
+  test('phpWorkbench.restartSession should restart session', async () => {
     const document = await vscode.workspace.openTextDocument({
       content: '$a = 1;',
       language: 'php',
@@ -458,8 +478,9 @@ echo "after";`,
 
     const editor = await vscode.window.showTextDocument(document);
 
-    let response =
-      await vscode.commands.executeCommand<ExecuteCodeResponse>('quickmix.executeCode');
+    let response = await vscode.commands.executeCommand<ExecuteCodeResponse>(
+      'phpWorkbench.executeCode'
+    );
 
     assert.equal(response.result!.returnValue, '1');
 
@@ -473,11 +494,13 @@ echo "after";`,
     assert.ok(wasEdited);
     assert.equal(editor.document.getText(), '++$a;');
 
-    response = await vscode.commands.executeCommand<ExecuteCodeResponse>('quickmix.executeCode');
+    response = await vscode.commands.executeCommand<ExecuteCodeResponse>(
+      'phpWorkbench.executeCode'
+    );
 
     assert.equal(response.result!.returnValue, '2');
 
-    await vscode.commands.executeCommand<ExecuteCodeResponse>('quickmix.restartSession');
+    await vscode.commands.executeCommand<ExecuteCodeResponse>('phpWorkbench.restartSession');
 
     wasEdited = await editor.edit(editBuilder => {
       editBuilder.replace(
@@ -489,7 +512,9 @@ echo "after";`,
     assert.ok(wasEdited);
     assert.equal(editor.document.getText(), '$a;');
 
-    response = await vscode.commands.executeCommand<ExecuteCodeResponse>('quickmix.executeCode');
+    response = await vscode.commands.executeCommand<ExecuteCodeResponse>(
+      'phpWorkbench.executeCode'
+    );
 
     assert.equal(response.error, 'Undefined variable $a');
     assert.equal(typeof response.result, 'undefined');

@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace QuickMix;
+namespace PhpWorkbench;
 
 use Psy\CodeCleaner;
 use Psy\CodeCleaner\NoReturnValue;
 use Psy\Context;
-use QuickMix\Input;
+use PhpWorkbench\Input;
 
 class Executor {
     protected bool $lastExecSuccess = false;

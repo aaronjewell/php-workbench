@@ -7,20 +7,24 @@ require_once __DIR__ . '/vendor/autoload.php';
 
 use Psy\CodeCleaner;
 use Psy\Context;
-use QuickMix\ErrorHandler;
-use QuickMix\ExecutionClosure;
-use QuickMix\Executor;
-use QuickMix\Input;
-use QuickMix\Output;
+use PhpWorkbench\ErrorHandler;
+use PhpWorkbench\ExecutionClosure;
+use PhpWorkbench\Executor;
+use PhpWorkbench\Input;
+use PhpWorkbench\Output;
 
-$executor = new Executor(
-    new Context(),
-    new Input(fopen('php://stdin', 'r')),
-    new Output(fopen('php://stdout', 'w')),
-    new CodeCleaner(),
-    new ErrorHandler(),
-);
+try {
+    $executor = new Executor(
+        new Context(),
+        new Input(fopen('php://stdin', 'r')),
+        new Output(fopen('php://stdout', 'w')),
+        new CodeCleaner(),
+        new ErrorHandler(),
+    );
 
-$loop = new ExecutionClosure($executor);
+    $loop = new ExecutionClosure($executor);
 
-$loop->execute();
+    $loop->execute();
+} catch (Throwable $e) {
+    error_log($e->getMessage(), 3, 'tmp/extension_errors.log');
+}

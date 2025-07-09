@@ -26,19 +26,19 @@ let connection: MessageConnection;
 let php: ChildProcessWithoutNullStreams;
 
 /**
- * Displays execution results in the QuickMix output panel
+ * Displays execution results in the PHP Workbench output panel
  *
  * @param result - The execution result to display
  */
 function displayResult(result: ExecuteCodeResponse): void {
   if (!outputChannel) {
-    outputChannel = vscode.window.createOutputChannel('QuickMix');
+    outputChannel = vscode.window.createOutputChannel('PHP Workbench');
   }
 
   // Clear previous output and add timestamp
   outputChannel.clear();
   outputChannel.appendLine(
-    `--- QuickMix Execution (${new Date().toLocaleTimeString()}): ${result.result ? 'Success' : 'Error'} ---`
+    `--- PHP Workbench Execution (${new Date().toLocaleTimeString()}): ${result.result ? 'Success' : 'Error'} ---`
   );
 
   outputChannel.appendLine(JSON.stringify(result.result || result.error));
@@ -76,13 +76,13 @@ function createPhpConnection(context: vscode.ExtensionContext): void {
 export function activate(context: vscode.ExtensionContext) {
   // Use the console to output diagnostic information (console.log) and errors (console.error)
   // This line of code will only be executed once when your extension is activated
-  // console.log('Congratulations, your extension "quickmix" is now active!');
+  // console.log('Congratulations, your extension "phpWorkbench" is now active!');
 
   // The command has been defined in the package.json file
   // Now provide the implementation of the command with registerCommand
   // The commandId parameter must match the command field in package.json
   const newScratchpadCommand = vscode.commands.registerCommand(
-    'quickmix.newScratchpad',
+    'phpWorkbench.newScratchpad',
     async () => {
       try {
         const document = await vscode.workspace.openTextDocument({
@@ -101,11 +101,11 @@ export function activate(context: vscode.ExtensionContext) {
   );
 
   const restartSessionCommand = vscode.commands.registerCommand(
-    'quickmix.restartSession',
+    'phpWorkbench.restartSession',
     async (): Promise<void> => {
       try {
         createPhpConnection(context);
-        vscode.window.showInformationMessage('QuickMix: Session restarted');
+        vscode.window.showInformationMessage('PHP Workbench: Session restarted');
       } catch (error) {
         vscode.window.showErrorMessage(`Failed to restart session: ${error}`);
       }
@@ -113,7 +113,7 @@ export function activate(context: vscode.ExtensionContext) {
   );
 
   const executeCommand = vscode.commands.registerCommand(
-    'quickmix.executeCode',
+    'phpWorkbench.executeCode',
     async (): Promise<ExecuteCodeResponse> => {
       const editor = vscode.window.activeTextEditor;
       if (!editor) {

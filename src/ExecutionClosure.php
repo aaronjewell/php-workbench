@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace QuickMix;
+namespace PhpWorkbench;
 
-use QuickMix\Executor;
+use PhpWorkbench\Executor;
 
 class ExecutionClosure
 {

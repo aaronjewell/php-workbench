@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace QuickMix;
+namespace PhpWorkbench;
 
 class Output {
     protected string $stdoutBuffer = '';

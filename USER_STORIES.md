@@ -1,4 +1,4 @@
-# QuickMix User Stories - MVP
+# Php Workbench User Stories - MVP
 
 ## High Priority Stories
 
@@ -9,7 +9,7 @@
 - **Priority**: High
 - **Dependencies**: None
 - **Acceptance Criteria**:
-  - Command palette option "QuickMix: New Scratchpad"
+  - Command palette option "Php Workbench: New Scratchpad"
   - Keyboard shortcut (Ctrl+Alt+N / Cmd+Alt+N)
   - Creates temporary PHP file with proper syntax highlighting
 
@@ -21,7 +21,7 @@
 - **Dependencies**: Scratchpad Creation
 - **Acceptance Criteria**:
   - Keyboard shortcut (Ctrl+Enter / Cmd+Enter)
-  - Command palette option "QuickMix: Execute Code"
+  - Command palette option "Php Workbench: Execute Code"
   - Executes current file or selected code
 
 ### 3. Composer Autoload Integration
@@ -55,13 +55,13 @@
 - **Priority**: Medium
 - **Dependencies**: Instant PHP Execution
 - **Acceptance Criteria**:
-  - Dedicated "QuickMix" output panel
+  - Dedicated "Php Workbench" output panel
   - Shows both successful results and errors
   - Doesn't interfere with editor workspace
 
 ### 6. Command Palette Integration
 
-**As a VS Code user, I want to access QuickMix features through the command palette so I can use it without memorizing shortcuts**
+**As a VS Code user, I want to access Php Workbench features through the command palette so I can use it without memorizing shortcuts**
 
 - **Priority**: Medium
 - **Dependencies**: Scratchpad Creation
@@ -107,7 +107,7 @@
 
 ### 10. Basic Configuration
 
-**As a PHP developer, I want to configure basic settings like timeout and Docker service name so I can customize QuickMix for my specific project needs**
+**As a PHP developer, I want to configure basic settings like timeout and Docker service name so I can customize Php Workbench for my specific project needs**
 
 - **Priority**: Low
 - **Dependencies**: Docker Compose Support
@@ -141,7 +141,7 @@
 
 ### 13. Workspace Context Detection
 
-**As a PHP developer, I want QuickMix to automatically detect my project's PHP version and Composer setup so it works without manual configuration**
+**As a PHP developer, I want Php Workbench to automatically detect my project's PHP version and Composer setup so it works without manual configuration**
 
 - **Priority**: Low
 - **Dependencies**: Composer Autoload Integration
@@ -163,7 +163,7 @@
 
 ### 15. Extension Marketplace Package
 
-**As a PHP developer, I want to install QuickMix from the VS Code marketplace so I can easily add it to my development environment**
+**As a PHP developer, I want to install Php Workbench from the VS Code marketplace so I can easily add it to my development environment**
 
 - **Priority**: Low
 - **Dependencies**: Core scratchpad creation, instant PHP execution, output panel display
