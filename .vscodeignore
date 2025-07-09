@@ -8,4 +8,10 @@ vsc-extension-quickstart.md
 **/eslint.config.mjs
 **/*.map
 **/*.ts
+**/*.test.js
 **/.vscode-test.*
+vendor/**
+bin/**
+.cursor/**
+composer.*
+USER_STORIES.md
