@@ -117,7 +117,7 @@ export function activate(context: vscode.ExtensionContext) {
     }
   );
 
-  const executeCommand = vscode.commands.registerCommand(
+  const executeCodeCommand = vscode.commands.registerCommand(
     'phpWorkbench.executeCode',
     async (): Promise<ExecuteCodeResponse> => {
       const editor = vscode.window.activeTextEditor;
@@ -141,9 +141,28 @@ export function activate(context: vscode.ExtensionContext) {
     }
   );
 
+  const reportIssueCommand = vscode.commands.registerCommand(
+    'phpWorkbench.reportIssue',
+    async (): Promise<void> => {
+      const issueBodyBuffer = await vscode.workspace.fs.readFile(
+        vscode.Uri.file(context.asAbsolutePath('res/issue-report.md'))
+      );
+
+      return vscode.commands.executeCommand('workbench.action.openIssueReporter', {
+        extensionId: 'aaronjewell.php-workbench',
+        issueBody: issueBodyBuffer.toString(),
+      });
+    }
+  );
+
   createPhpConnection(context);
 
-  context.subscriptions.push(newScratchpadCommand, executeCommand, restartSessionCommand);
+  context.subscriptions.push(
+    newScratchpadCommand,
+    executeCodeCommand,
+    restartSessionCommand,
+    reportIssueCommand
+  );
 }
 
 // This method is called when your extension is deactivated
