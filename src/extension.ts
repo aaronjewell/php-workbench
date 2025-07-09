@@ -47,8 +47,9 @@ function displayResult(result: ExecuteCodeResponse): void {
   outputChannel.show(true); // preserveFocus: true keeps focus on editor
 }
 
-function createPhpConnection(context: vscode.ExtensionContext): MessageConnection {
+function createPhpConnection(context: vscode.ExtensionContext): void {
   if (php && !php.killed) {
+    php.removeAllListeners('exit');
     php.kill('SIGKILL');
   }
 
@@ -56,20 +57,18 @@ function createPhpConnection(context: vscode.ExtensionContext): MessageConnectio
     stdio: ['pipe', 'pipe', 'pipe'],
   });
 
-  const conn = createMessageConnection(
+  connection = createMessageConnection(
     new StreamMessageReader(php.stdout),
     new StreamMessageWriter(php.stdin)
   );
-  conn.listen();
+  connection.listen();
 
   php.once('exit', (code, signal) => {
     // TODO: Handle the ways that it can exit differently based on the signal and code
     console.warn(`PHP worker exited (${signal ?? code}); respawning`);
     connection.dispose(); // flush pending promises
-    connection = createPhpConnection(context); // transparent restart
+    createPhpConnection(context); // transparent restart
   });
-
-  return conn;
 }
 
 // This method is called when your extension is activated
@@ -104,15 +103,11 @@ export function activate(context: vscode.ExtensionContext) {
   const restartSessionCommand = vscode.commands.registerCommand(
     'quickmix.restartSession',
     async (): Promise<void> => {
-      // Kill the worker gracefully, and allow it to restart
-      if (php.kill('SIGTERM')) {
+      try {
+        createPhpConnection(context);
         vscode.window.showInformationMessage('QuickMix: Session restarted');
-      } else {
-        if (php.kill('SIGKILL')) {
-          vscode.window.showInformationMessage('QuickMix: Session restarted');
-        } else {
-          vscode.window.showErrorMessage('QuickMix: Failed to restart session');
-        }
+      } catch (error) {
+        vscode.window.showErrorMessage(`Failed to restart session: ${error}`);
       }
     }
   );
@@ -134,14 +129,14 @@ export function activate(context: vscode.ExtensionContext) {
         displayResult({ result });
         return { result };
       } catch (err: any) {
-        const message = err instanceof Error ? err.message : String(err);
-        displayResult({ error: message });
-        return { error: message };
+        const error = err instanceof Error ? err.message : String(err);
+        displayResult({ error });
+        return { error };
       }
     }
   );
 
-  connection = createPhpConnection(context);
+  createPhpConnection(context);
 
   context.subscriptions.push(newScratchpadCommand, executeCommand, restartSessionCommand);
 }
