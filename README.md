@@ -130,16 +130,6 @@ echo "Total: $" . calculateTotal($items);
 
 - Check if PHP is installed: `php --version`
 
-## Release Notes
-
-### 0.0.1
-
-Initial release of PHP Workbench
-
-- Scratchpad management
-- Basic PHP code execution with and without selections
-- Session restarting to clear context (defined variables)
-
 ---
 
 ## Contributing

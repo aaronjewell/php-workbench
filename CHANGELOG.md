@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Corrected license file reference in package.json to point to LICENSE.txt
+
 ## [0.1.0] - 2025-07-09
 
 ### Added
