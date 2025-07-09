@@ -1,0 +1,109 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+\exec('composer install -q --no-dev', $output, $result);
+
+if ($result !== 0) {
+    echo 'Error: Failed to remove dev dependencies. Ensure you have exec allowed and composer installed in your PATH.' . PHP_EOL;
+}
+
+if (!\file_exists(__DIR__ . '/../vendor/autoload.php')) {
+    echo 'Error: vendor/autoload.php not found. Please run "composer install" first.' . PHP_EOL;
+    exit(1);
+}
+
+\error_reporting(-1);
+\ini_set('display_errors', '1');
+
+$pharFile = __DIR__.'/../out/php-workbench.phar';
+$outDir = dirname($pharFile);
+
+if (!is_dir($outDir)) {
+    mkdir($outDir, 0755, true);
+}
+
+if (file_exists($pharFile)) {
+    unlink($pharFile);
+}
+
+try {
+    echo "Building PHP Workbench .phar file...\n";
+    $phar = new Phar($pharFile, 0, 'php-workbench.phar');
+    
+    $phar->startBuffering();
+    
+    // Add all PHP source files from src/
+    $srcIterator = new RecursiveIteratorIterator(
+        new RecursiveDirectoryIterator('src/', RecursiveDirectoryIterator::SKIP_DOTS),
+        RecursiveIteratorIterator::SELF_FIRST
+    );
+    
+    echo "Adding source files...\n";
+    foreach ($srcIterator as $file) {
+        if ($file->isFile() && $file->getExtension() === 'php') {
+            $relativePath = 'src/' . $file->getFilename();
+            $phar->addFile($file->getPathname(), $relativePath);
+            echo "  Added: {$relativePath}\n";
+        }
+    }
+    
+    echo "Adding vendor dependencies...\n";
+    $vendorIterator = new RecursiveIteratorIterator(
+        new RecursiveDirectoryIterator('vendor/', RecursiveDirectoryIterator::SKIP_DOTS),
+        RecursiveIteratorIterator::SELF_FIRST
+    );
+    
+    foreach ($vendorIterator as $file) {
+        if ($file->isFile()) {
+            $relativePath = \str_replace('\\', '/', $file->getPathname());
+            
+            // Skip unnecessary files for smaller phar
+            if (\preg_match('/\.(md|txt|xml|yml|yaml|json|dist|example)$/i', $file->getExtension()) ||
+                \strpos($relativePath, '/tests/') !== false ||
+                \strpos($relativePath, '/test/') !== false ||
+                \strpos($relativePath, '/.git/') !== false ||
+                \strpos($relativePath, '/docs/') !== false ||
+                \strpos($relativePath, '/examples/') !== false) {
+                continue;
+            }
+            
+            $phar->addFile($file->getPathname(), $relativePath);
+        }
+    }
+
+    $workbenchBin = \file_get_contents(__DIR__.'/../bin/workbench');
+    $workbenchBin = \preg_replace('{^#!/usr/bin/env php\s*}', '', $workbenchBin);
+    $phar->addFromString('bin/workbench', $workbenchBin);
+    
+    echo "Creating stub...\n";
+    $stub = <<<'EOF'
+#!/usr/bin/env php
+<?php
+if (!class_exists('Phar')) {
+    echo 'PHP\'s phar extension is missing. PHP Workbench requires it to run. Enable the extension or recompile php without --disable-phar then try again.' . PHP_EOL;
+    exit(1);
+}
+
+Phar::mapPhar('php-workbench.phar');
+
+require_once 'phar://php-workbench.phar/bin/workbench';
+__HALT_COMPILER();
+EOF;
+
+    $phar->setStub($stub);
+    
+    $phar->stopBuffering();
+    
+    // Make the phar executable
+    chmod($pharFile, 0755);
+    
+    echo "Successfully created: {$pharFile}\n";
+    echo "File size: " . number_format(filesize($pharFile)) . " bytes\n";
+    echo "The .phar file is now ready for distribution.\n";
+    
+} catch (Exception $e) {
+    echo "Error creating .phar file: " . $e->getMessage() . "\n";
+    exit(1);
+}

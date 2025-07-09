@@ -62,14 +62,15 @@
     }
   },
   "scripts": {
-    "vscode:prepublish": "npm run format && npm run compile",
+    "vscode:prepublish": "npm run format && npm run compile && npm run build:phar",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "pretest": "npm run format && npm run compile && npm run lint",
     "lint": "eslint src",
     "test": "vscode-test",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "build:phar": "php -dphar.readonly=0 bin/compile"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.10",

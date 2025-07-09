@@ -61,12 +61,14 @@ This project adheres to a code of conduct that promotes a welcoming and inclusiv
 When reporting bugs, please include:
 
 **Environment:**
+
 - VS Code version
 - PHP Workbench version
 - PHP version (`php --version`)
 - Operating system
 
 **Steps to Reproduce:**
+
 1. Step one
 2. Step two
 3. Step three
@@ -78,11 +80,13 @@ Describe what you expected to happen.
 Describe what actually happened.
 
 **Code Sample:**
+
 ```php
 // Minimal code that reproduces the issue
 ```
 
 **Additional Context:**
+
 - Screenshots or recordings if applicable
 - Error messages from the Output panel
 
@@ -141,16 +145,19 @@ Brief summary of changes made.
 Fixes #(issue number)
 
 **Type of Change:**
+
 - [ ] Bug fix
-- [ ] New feature  
+- [ ] New feature
 - [ ] Breaking change
 - [ ] Documentation update
 
 **Testing:**
+
 - [ ] Tests pass
 - [ ] Manual testing completed
 
 **Checklist:**
+
 - [ ] Code follows style guidelines
 - [ ] Self-review completed
 - [ ] Comments added to complex code
@@ -224,6 +231,7 @@ npm test
 We use [Conventional Commits](https://conventionalcommits.org/):
 
 ### Format
+
 ```
 <type>(<scope>): <description>
 
@@ -233,6 +241,7 @@ We use [Conventional Commits](https://conventionalcommits.org/):
 ```
 
 ### Types
+
 - **feat**: New feature
 - **fix**: Bug fix
 - **docs**: Documentation changes
@@ -242,6 +251,7 @@ We use [Conventional Commits](https://conventionalcommits.org/):
 - **chore**: Maintenance tasks
 
 ### Examples
+
 ```
 feat(commands): add createScratchpad command with basic functionality
 fix(services): handle PHP execution timeout properly
@@ -265,4 +275,4 @@ test(services): add unit tests for CodeExecutor class
 
 ## Recognition
 
-Contributors will be recognized in the README and release notes. Thank you for helping make PHP Workbench better! 
+Contributors will be recognized in the README and release notes. Thank you for helping make PHP Workbench better!

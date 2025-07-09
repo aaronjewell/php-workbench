@@ -1,4 +1,3 @@
-// The module 'vscode' contains the VS Code extensibility API
 import * as vscode from 'vscode';
 import { spawn, ChildProcessWithoutNullStreams } from 'child_process';
 import {
@@ -8,6 +7,7 @@ import {
   RequestType,
   MessageConnection,
 } from 'vscode-jsonrpc/node';
+import * as fs from 'fs';
 
 type EvalResponse = {
   stdout: string;
@@ -47,13 +47,18 @@ function displayResult(result: ExecuteCodeResponse): void {
   outputChannel.show(true); // preserveFocus: true keeps focus on editor
 }
 
+function getPhpEntrypoint(context: vscode.ExtensionContext): string {
+  const phar = context.asAbsolutePath('out/php-workbench.phar');
+  return fs.existsSync(phar) ? phar : context.asAbsolutePath('bin/workbench');
+}
+
 function createPhpConnection(context: vscode.ExtensionContext): void {
   if (php && !php.killed) {
     php.removeAllListeners('exit');
     php.kill('SIGKILL');
   }
 
-  php = spawn('php', [context.asAbsolutePath('worker.php')], {
+  php = spawn('php', [getPhpEntrypoint(context)], {
     stdio: ['pipe', 'pipe', 'pipe'],
   });
 
