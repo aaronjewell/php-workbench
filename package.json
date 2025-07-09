@@ -3,12 +3,25 @@
   "displayName": "PHP Workbench",
   "description": "A dedicated workspace for PHP development and experimentation. Test PHP code snippets instantly - no temporary files or terminal switching required.",
   "version": "0.0.1",
+  "license": "SEE LICENSE IN LICENSE",
   "engines": {
     "vscode": "^1.99.3"
   },
   "categories": [
-    "Other"
+    "Programming Languages",
+    "Debuggers",
+    "Testing"
   ],
+  "keywords": [
+    "php"
+  ],
+  "icon": "res/icon.png",
+  "preview": true,
+  "homepage": "https://github.com/aaronjewell/php-workbench/blob/main/README.md",
+  "bugs": {
+    "url": "https://github.com/aaronjewell/php-workbench/issues",
+    "email": "me@aaronjewell.dev"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/aaronjewell/php-workbench"
