@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Build scripts now use clean script to remove artifacts before compilation
+- Updated CONTRIBUTING.md to document all available npm scripts
+
+## [0.1.1] - 2025-07-09
+
 ### Fixed
 
 - Corrected license file reference in package.json to point to LICENSE.txt

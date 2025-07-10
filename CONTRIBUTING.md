@@ -226,6 +226,18 @@ worker.php              # JSON-RPC server worker script
 npm test
 ```
 
+### Available Scripts
+
+- `npm run clean` - Remove build artifacts (out/ directory)
+- `npm run compile` - Clean and compile TypeScript
+- `npm run watch` - Watch for changes and compile
+- `npm run test` - Run all tests
+- `npm run lint` - Run ESLint checks
+- `npm run format` - Format code with Prettier
+- `npm run format:check` - Check code formatting
+- `npm run build:phar` - Build PHP worker archive
+- `npm run vscode:prepublish` - Full build for publishing
+
 ## Commit Messages
 
 We use [Conventional Commits](https://conventionalcommits.org/):
