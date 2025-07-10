@@ -4,10 +4,11 @@ import {
   createMessageConnection,
   StreamMessageReader,
   StreamMessageWriter,
-  RequestType,
+  RequestType2,
   MessageConnection,
 } from 'vscode-jsonrpc/node';
 import * as fs from 'fs';
+import * as path from 'path';
 
 type EvalResponse = {
   stdout: string;
@@ -19,7 +20,7 @@ export type ExecuteCodeResponse = {
   error?: string;
 };
 
-const EvalRequest = new RequestType<string, EvalResponse, void>('eval');
+const EvalRequest = new RequestType2<string, string, EvalResponse, void>('eval');
 
 let outputChannel: vscode.OutputChannel;
 let connection: MessageConnection;
@@ -130,7 +131,12 @@ export function activate(context: vscode.ExtensionContext) {
           ? editor.document.getText(editor.selection)
           : editor.document.getText();
 
-        const result = await connection.sendRequest(EvalRequest, code);
+        const result = await connection.sendRequest(
+          EvalRequest,
+          code,
+          vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ||
+            path.dirname(editor.document.uri.fsPath)
+        );
         displayResult({ result });
         return { result };
       } catch (err: any) {

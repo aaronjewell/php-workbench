@@ -34,7 +34,9 @@ class Executor {
 
     public function getInput(): void
     {
-        $this->addCode($this->input->read());
+        $params = $this->input->read();
+        $this->addCode($params[0]);
+        $this->setWorkingDirectory($params[1]);
     }
 
     public function addCode(string $code): void
@@ -56,6 +58,15 @@ class Executor {
     public function flushCode(): string
     {
         return trim($this->code) ?: 'return null;';
+    }
+
+    public function setWorkingDirectory(string $directory): void
+    {
+        if (!is_dir($directory)) {
+            return;
+        }
+
+        chdir($directory);
     }
 
     public function getBoundClass(): ?string
@@ -128,7 +139,6 @@ class Executor {
     {
 
         if ($out !== '' && !($phase & \PHP_OUTPUT_HANDLER_CLEAN)) {
-            error_log('handleStdout: '.$out.PHP_EOL, 3, '/tmp/extension_errors.log');
             $this->output->writeStdout($out);
         }
 

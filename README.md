@@ -1,8 +1,8 @@
 # PHP Workbench
 
-A dedicated workspace for PHP development and experimentation. Test PHP code snippets instantly - no temporary files or terminal switching required.
+A dedicated workspace for PHP development and experimentation. Test PHP code snippets instantly with full access to your project's Composer dependencies, custom classes, and framework components - no temporary files or terminal switching required.
 
-Perfect for experimenting with APIs or testing functions, without disrupting your workflow.
+Modern PHP development relies heavily on Composer packages. PHP Workbench automatically detects and includes your project's `vendor/autoload.php`, giving you instant access to test package integrations, debug business logic, and experiment with your actual project dependencies without disrupting your workflow.
 
 ## Features
 
@@ -10,6 +10,7 @@ Perfect for experimenting with APIs or testing functions, without disrupting you
 
 - Execute PHP code snippets with `Ctrl+Enter` (or `Cmd+Enter`)
 - See results immediately in VS Code's output panel
+- Automatic Composer integration - Uses your project's vendor/autoload.php automatically
 - Full error handling with line numbers and stack traces
 - No need for `<?php` tags - just write PHP code
 
@@ -61,6 +62,7 @@ Perfect for experimenting with APIs or testing functions, without disrupting you
 PHP Workbench works out of the box with sensible defaults:
 
 - **PHP**: Uses `php` command from your PATH
+- **Composer**: Automatically detects and includes vendor/autoload.php from your workspace
 - **Output**: Results appear in the "PHP Workbench" output panel
 
 ## Keyboard Shortcuts
@@ -74,12 +76,29 @@ PHP Workbench works out of the box with sensible defaults:
 
 Perfect for:
 
-- **API exploration** - Test API calls and responses quickly
-- **Function debugging** - Isolate and test problematic functions
-- **Learning PHP** - Experiment with PHP features and syntax
-- **Code snippets** - Test small pieces of code
+- **Package integration testing** - Test how third-party packages work with your data before committing to implementation
+- **API exploration** - Test API calls with real HTTP clients and logging
+- **Business logic debugging** - Isolate complex logic with actual project dependencies
+- **Database query testing** - Test ORM queries and relationships without running full application
+- **Configuration validation** - Test environment-specific configurations and service integrations
+- **Learning new packages** - Experiment with package APIs in your project context
 
 ## Examples
+
+### Quick Function Testing
+
+```php
+function calculateTotal($items) {
+    return array_sum(array_column($items, 'price'));
+}
+
+$items = [
+    ['name' => 'Item 1', 'price' => 10.50],
+    ['name' => 'Item 2', 'price' => 25.00],
+];
+
+echo "Total: $" . calculateTotal($items);
+```
 
 ### API Testing
 
@@ -103,19 +122,28 @@ $body = json_decode($response, true);
 return $body['name'];
 ```
 
-### Quick Function Testing
+### Testing Package Integrations
+
+Same API call as above, but using your project's Composer dependencies for better logging and HTTP handling:
 
 ```php
-function calculateTotal($items) {
-    return array_sum(array_column($items, 'price'));
-}
+// Works with ANY Composer project - automatically includes vendor/autoload.php
+use Monolog\Logger;
+use Monolog\Handler\StreamHandler;
+use GuzzleHttp\Client;
 
-$items = [
-    ['name' => 'Item 1', 'price' => 10.50],
-    ['name' => 'Item 2', 'price' => 25.00],
-];
+// Test logging behavior
+$logger = new Logger('test');
+$logger->pushHandler(new StreamHandler('php://output', Logger::DEBUG));
 
-echo "Total: $" . calculateTotal($items);
+// Test HTTP client with your actual config
+$client = new Client();
+$response = $client->get('https://api.github.com/users/octocat');
+
+$logger->info('API Response', [
+    'status' => $response->getStatusCode(),
+    'user' => json_decode($response->getBody(), true)['name']
+]);
 ```
 
 ## Requirements

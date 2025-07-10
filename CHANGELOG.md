@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Composer Autoload Detection** - Automatically detects and includes Composer's vendor/autoload.php from workspace or active file directory
+
 ### Changed
 
 - Build scripts now use clean script to remove artifacts before compilation

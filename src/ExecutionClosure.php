@@ -20,6 +20,11 @@ class ExecutionClosure
                     $executor->getInput();
 
                     try {
+                        $autoloader = getcwd() . '/vendor/autoload.php';
+                        if (file_exists($autoloader)) {
+                            require_once $autoloader;
+                        }
+
                         if ($executor->wasLastExecSuccessful()) {
                             \extract($executor->getScopeVariablesDiff(\get_defined_vars()));
                         }
@@ -47,6 +52,7 @@ class ExecutionClosure
 
                     $executor->writeReturnValue($_);
                 } catch (\Throwable $e) {
+                    error_log('error: ' . $e->getMessage(), 3, '/tmp/extension_errors.log');
                     $executor->writeException($e);
                 }
 

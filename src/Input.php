@@ -13,7 +13,7 @@ class Input
     ) {
     }
 
-    public function read(): string
+    public function read(): array
     {
         $this->id = -1;
         
@@ -25,11 +25,11 @@ class Input
         }
 
         if ($headers === '') {
-            return '';
+            return ['', getcwd()];
         }
 
         if (!preg_match('/Content-Length:\s*(\d+)/i', $headers, $matches)) {
-            return '';
+            return ['', getcwd()];
         }
 
         $len = (int)$matches[1];
@@ -43,7 +43,7 @@ class Input
 
         $this->id = $request['id'];
 
-        return $request['params'][0];
+        return $request['params'];
     }
 
     public function getId(): int
