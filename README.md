@@ -4,6 +4,10 @@ A dedicated workspace for PHP development and experimentation. Test PHP code sni
 
 Modern PHP development relies heavily on Composer packages. PHP Workbench automatically detects and includes your project's `vendor/autoload.php`, giving you instant access to test package integrations, debug business logic, and experiment with your actual project dependencies without disrupting your workflow.
 
+## Demo
+
+![PHP Workbench Demo](res/demo.gif)
+
 ## Features
 
 ### 🚀 **Instant PHP Execution**

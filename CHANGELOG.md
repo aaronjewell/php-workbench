@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Demo GIF to README.md showcasing extension functionality
+
 ### Changed
 
 - Improved documentation clarity in README.md examples
