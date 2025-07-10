@@ -52,7 +52,6 @@ class ExecutionClosure
 
                     $executor->writeReturnValue($_);
                 } catch (\Throwable $e) {
-                    error_log('error: ' . $e->getMessage(), 3, '/tmp/extension_errors.log');
                     $executor->writeException($e);
                 }
 

@@ -132,11 +132,11 @@ use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
 use GuzzleHttp\Client;
 
-// Test logging behavior
+// Test logging behavior by routing the stream to php's output
 $logger = new Logger('test');
 $logger->pushHandler(new StreamHandler('php://output', Logger::DEBUG));
 
-// Test HTTP client with your actual config
+// Test HTTP client with your actual configs
 $client = new Client();
 $response = $client->get('https://api.github.com/users/octocat');
 

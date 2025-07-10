@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Improved documentation clarity in README.md examples
+
+### Fixed
+
+- Removed debug logging statement from ExecutionClosure.php
+
 ## [0.2.1] - 2025-07-10
 
 ### Added
