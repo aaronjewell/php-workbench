@@ -2,7 +2,7 @@
   "name": "php-workbench",
   "displayName": "PHP Workbench",
   "description": "A dedicated workspace for PHP development and experimentation. Test PHP code snippets instantly - no temporary files or terminal switching required.",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "license": "SEE LICENSE IN LICENSE.txt",
   "engines": {
     "vscode": "^1.99.3"
