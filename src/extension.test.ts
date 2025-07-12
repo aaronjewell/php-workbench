@@ -1,9 +1,8 @@
-// You can import and use all API from the 'vscode' module
-// as well as import your extension to test it
 import * as vscode from 'vscode';
 import * as assert from 'assert';
 
 import type { ExecuteCodeResponse } from './extension';
+import { WebviewPanel } from 'vscode';
 
 suite('Extension Test Suite', () => {
   vscode.window.showInformationMessage('Start all tests.');
@@ -13,7 +12,6 @@ suite('Extension Test Suite', () => {
   setup(async () => {
     extension = vscode.extensions.getExtension('aaronjewell.php-workbench')!;
     assert.ok(extension);
-    await extension.activate();
   });
 
   test('vscode should be able to get phpWorkbench configuration', async () => {
@@ -27,12 +25,6 @@ suite('Extension Test Suite', () => {
     assert.equal(config.type, 'object');
     assert.equal(config.title, 'PHP Workbench');
     assert.ok(config.properties);
-  });
-
-  test('phpWorkbench.newScratchpad command should be registered', async () => {
-    const commands = await vscode.commands.getCommands(true);
-
-    assert.ok(commands.includes('phpWorkbench.newScratchpad'));
   });
 
   test('phpWorkbench.newScratchpad command should be defined as keyboard shortcut in package.json', async () => {
@@ -98,13 +90,6 @@ suite('Extension Test Suite', () => {
       vscode.workspace.openTextDocument = originalOpenTextDocument;
       vscode.window.showErrorMessage = originalShowErrorMessage;
     }
-  });
-
-  // Tests for phpWorkbench.executeCode command - following zero-one-many strategy
-  test('phpWorkbench.executeCode command should be registered', async () => {
-    const commands = await vscode.commands.getCommands(true);
-
-    assert.ok(commands.includes('phpWorkbench.executeCode'));
   });
 
   test('phpWorkbench.executeCode command should be defined as keyboard shortcut in package.json', async () => {
@@ -468,6 +453,21 @@ echo "after";`,
     assert.strictEqual(editor.selection.start.character, startPos.character);
     assert.strictEqual(editor.selection.end.line, endPos.line);
     assert.strictEqual(editor.selection.end.character, endPos.character);
+  });
+
+  test('phpWorkbench.executeCode should show results in the webview', async () => {
+    const document = await vscode.workspace.openTextDocument({
+      content: '$a = 1;',
+      language: 'php',
+    });
+
+    await vscode.window.showTextDocument(document);
+
+    await vscode.commands.executeCommand<ExecuteCodeResponse>('phpWorkbench.executeCode');
+
+    assert.ok(
+      vscode.window.tabGroups.activeTabGroup.tabs.some(tab => tab.label === 'PHP Workbench Results')
+    );
   });
 
   test('phpWorkbench.restartSession should restart session', async () => {

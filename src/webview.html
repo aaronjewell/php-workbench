@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PHP Workbench Results</title>
+    <style>
+      :root {
+        --border-radius: 4px;
+        --spacing-sm: 8px;
+        --spacing-md: 12px;
+        --spacing-lg: 15px;
+        --spacing-xl: 20px;
+        --font-mono: var(
+          --vscode-editor-font-family,
+          'Consolas',
+          'Monaco',
+          'Courier New',
+          monospace
+        );
+        --font-size-sm: 12px;
+        --font-size-md: 14px;
+        --font-size-lg: 18px;
+      }
+
+      body {
+        font-family: var(--vscode-font-family, 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif);
+        /* background-color: var(--vscode-editor-background); */
+        color: var(--vscode-foreground);
+        margin: 0;
+        padding: var(--spacing-xl);
+        line-height: 1.6;
+      }
+
+      .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 0;
+        border-bottom: 1px solid var(--vscode-panel-border);
+        margin-bottom: var(--spacing-xl);
+      }
+
+      .title {
+        font-size: var(--font-size-lg);
+        font-weight: bold;
+      }
+
+      .timestamp {
+        font-size: var(--font-size-sm);
+        color: var(--vscode-descriptionForeground);
+      }
+
+      .status-badge {
+        display: inline-block;
+        padding: 4px var(--spacing-sm);
+        border-radius: var(--border-radius);
+        font-size: var(--font-size-sm);
+        font-weight: bold;
+        text-transform: uppercase;
+        background-color: var(--vscode-badge-background);
+        color: var(--vscode-badge-foreground);
+      }
+
+      .status-badge[data-state='error'] {
+        background-color: var(--vscode-activityErrorBadge-background);
+        color: var(--vscode-activityErrorBadge-foreground);
+      }
+
+      .content {
+        border: 1px solid var(--vscode-panel-border);
+        border-radius: var(--border-radius);
+        overflow: hidden;
+      }
+
+      .section {
+        padding: var(--spacing-lg);
+        border-bottom: 1px solid var(--vscode-panel-border);
+      }
+
+      .section:last-child {
+        border-bottom: none;
+      }
+
+      .section-title {
+        font-size: var(--font-size-md);
+        font-weight: bold;
+        margin-bottom: var(--spacing-sm);
+      }
+
+      .code-block {
+        background-color: var(--vscode-textCodeBlock-background);
+        border: 1px solid var(--vscode-text);
+        border-radius: var(--border-radius);
+        padding: var(--spacing-md);
+        font-family: var(--font-mono);
+        font-size: var(--vscode-editor-font-size, var(--font-size-md));
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        max-height: 400px;
+        overflow-y: auto;
+      }
+
+      .code-block[data-type='error'] {
+        color: var(--vscode-errorForeground);
+      }
+
+      .state-display {
+        text-align: center;
+        padding: 40px;
+        color: var(--vscode-descriptionForeground);
+      }
+
+      .state-display h3 {
+        margin-bottom: 10px;
+      }
+
+      .loading {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .loading::before {
+        content: '';
+        width: 16px;
+        height: 16px;
+        border: 2px solid var(--vscode-progressBar-background);
+        border-top: 2px solid var(--vscode-textLink-foreground);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-right: 10px;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      .hidden {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <div class="title">PHP Workbench Results</div>
+      <div style="display: flex; align-items: center; gap: var(--spacing-md)">
+        <div id="status-indicator" class="status-badge hidden"></div>
+        <div class="timestamp" id="timestamp"></div>
+      </div>
+    </div>
+
+    <div id="empty-state" class="state-display">
+      <h3>Ready to execute PHP code</h3>
+      <p>
+        Use <strong>Ctrl+Enter</strong> (or <strong>Cmd+Enter</strong> on Mac) to execute your code
+        and see results here.
+      </p>
+    </div>
+
+    <div id="loading" class="state-display loading hidden">Executing PHP code...</div>
+
+    <div id="results" class="content hidden">
+      <div id="output-section" class="section hidden">
+        <div class="section-title">Output</div>
+        <div id="output-content" class="code-block"></div>
+      </div>
+
+      <div id="return-section" class="section hidden">
+        <div class="section-title">Return Value</div>
+        <div id="return-content" class="code-block"></div>
+      </div>
+
+      <div id="error-section" class="section hidden">
+        <div class="section-title">Error</div>
+        <div id="error-content" class="code-block" data-type="error"></div>
+      </div>
+    </div>
+
+    <script>
+      const vscode = acquireVsCodeApi();
+
+      const elements = {
+        emptyState: document.getElementById('empty-state'),
+        loading: document.getElementById('loading'),
+        results: document.getElementById('results'),
+        timestamp: document.getElementById('timestamp'),
+        statusIndicator: document.getElementById('status-indicator'),
+        sections: {
+          output: document.getElementById('output-section'),
+          return: document.getElementById('return-section'),
+          error: document.getElementById('error-section'),
+        },
+        content: {
+          output: document.getElementById('output-content'),
+          return: document.getElementById('return-content'),
+          error: document.getElementById('error-content'),
+        },
+      };
+
+      /**
+       * Updates the timestamp display
+       */
+      function updateTimestamp() {
+        elements.timestamp.textContent = new Date().toLocaleTimeString();
+      }
+
+      /**
+       * Shows a specific state and hides others
+       * @param {string} state - The state to show: 'empty', 'loading', or 'results'
+       */
+      function showState(state) {
+        const states = ['empty-state', 'loading', 'results'];
+        states.forEach(s => {
+          elements[s.replace('-', '')] || elements[s];
+          const element = s === 'empty-state' ? elements.emptyState : elements[s];
+          element.classList.toggle('hidden', s !== state);
+        });
+
+        // Show/hide status badge based on state
+        elements.statusIndicator.classList.toggle('hidden', state !== 'results');
+
+        updateTimestamp();
+      }
+
+      /**
+       * Displays execution results
+       * @param {Object} data - The execution result data
+       */
+      function displayResults(data) {
+        showState('results');
+
+        // Reset all sections
+        Object.values(elements.sections).forEach(section => section.classList.add('hidden'));
+
+        if (data.error) {
+          elements.statusIndicator.textContent = 'Error';
+          elements.statusIndicator.dataset.state = 'error';
+          elements.content.error.textContent = data.error;
+          elements.sections.error.classList.remove('hidden');
+        } else if (data.result) {
+          elements.statusIndicator.textContent = 'Success';
+          elements.statusIndicator.dataset.state = 'success';
+
+          // Show relevant sections based on available data
+          const resultMap = {
+            stdout: 'output',
+            returnValue: 'return',
+          };
+
+          Object.entries(resultMap).forEach(([key, section]) => {
+            if (data.result[key]) {
+              elements.content[section].textContent = data.result[key];
+              elements.sections[section].classList.remove('hidden');
+            }
+          });
+        }
+      }
+
+      window.addEventListener('message', event => {
+        const { type, data } = event.data;
+
+        switch (type) {
+          case 'executionStarted':
+            showState('loading');
+            break;
+          case 'executionResult':
+            displayResults(data);
+            break;
+        }
+      });
+
+      updateTimestamp();
+    </script>
+  </body>
+</html>

@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Webview Results Panel** - HTML panel for displaying PHP execution results in friendlier UI
+- **Real-time Execution Feedback** - Visual indicators during code execution with loading states
+- **Enhanced Result Display** - Separate sections for output, return values, and errors in the webview
+- **Webview Resource Management** - Proper cleanup and caching of webview resources
+
+### Changed
+
+- **Improved Build System** - Added webview.html copying to compilation process with proper pre-compile hooks
+- **Enhanced Extension Architecture** - Better resource management with proper cleanup and disposal patterns
+- **Friendlier UI/UX** - Replaced basic output channel with interactive webview for better user experience
+- **Output Channel Auto Reveal** - Output channel no longer reveals automatically, although it still renders results
+
+### Technical
+
+- Added comprehensive webview integration with VS Code's webview API
+- Implemented proper resource cleanup and disposal patterns
+- Enhanced test coverage for webview functionality
+- Improved TypeScript documentation and code organization
+
 ## [0.2.2] - 2025-07-10
 
 ### Added
