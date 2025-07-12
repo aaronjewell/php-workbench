@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.1] - 2025-01-12
+
+### Security
+
+- **Token-based Authentication** - Added secure token validation between VSCode extension and PHP worker process
+- **Request Validation** - Enhanced JSON-RPC request validation to prevent malformed requests
+
+### Fixed
+
+- **Execution Loop Logic** - Fixed inverted boolean logic in `shouldContinue()` and `hasMore()` methods
+- **Process Cleanup** - Improved PHP worker process termination with proper signal handling
+- **Test Compatibility** - Fixed webview panel detection test to work across all tab groups
+
+### Changed
+
+- **Error Handling** - Enhanced error handling in PHP worker process with better exception management
+- **Process Management** - Improved cleanup and disposal of PHP worker processes and connections
+- **Logging** - Added comprehensive logging for debugging PHP worker process lifecycle
+
+### Technical
+
+- Enhanced security model with cryptographically secure token generation
+- Improved process lifecycle management with proper resource cleanup
+- Better error propagation and handling throughout the system
+
 ## [0.3.0] - 2025-07-11
 
 ### Added

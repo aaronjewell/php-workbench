@@ -10,6 +10,7 @@ class Input
 
     public function __construct(
         protected $resource,
+        protected string $token,
     ) {
     }
 
@@ -41,9 +42,26 @@ class Input
 
         $request = json_decode($body, true);
 
+        if ($request === null || !isset($request['id'], $request['params'])) {
+            throw new \RuntimeException('Invalid JSON-RPC request');
+        }
+
         $this->id = $request['id'];
 
-        return $request['params'];
+        $params = $request['params'];
+        
+        // Validate token - expect 3 parameters: code, workdir, token
+        if (count($params) !== 3) {
+            throw new \RuntimeException('Invalid request: missing token');
+        }
+        
+        $challengeToken = $params[2];
+        if (!hash_equals($this->token, $challengeToken)) {
+            throw new \RuntimeException('Invalid token');
+        }
+
+        // Return only code and working directory, token validation is complete
+        return [$params[0], $params[1]];
     }
 
     public function getId(): int
@@ -53,6 +71,6 @@ class Input
 
     public function hasMore(): bool
     {
-        return \feof($this->resource);
+        return !\feof($this->resource);
     }
 }

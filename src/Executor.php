@@ -29,7 +29,7 @@ class Executor {
 
     public function shouldContinue(): bool
     {
-        return !$this->input->hasMore();
+        return $this->input->hasMore();
     }
 
     public function getInput(): void

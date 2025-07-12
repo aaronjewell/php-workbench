@@ -466,7 +466,9 @@ echo "after";`,
     await vscode.commands.executeCommand<ExecuteCodeResponse>('phpWorkbench.executeCode');
 
     assert.ok(
-      vscode.window.tabGroups.activeTabGroup.tabs.some(tab => tab.label === 'PHP Workbench Results')
+      vscode.window.tabGroups.all.some(tabGroup =>
+        tabGroup.tabs.some(tab => tab.label === 'PHP Workbench Results')
+      )
     );
   });
 

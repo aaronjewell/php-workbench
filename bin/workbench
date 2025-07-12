@@ -13,14 +13,26 @@ use PhpWorkbench\Executor;
 use PhpWorkbench\Input;
 use PhpWorkbench\Output;
 
-$executor = new Executor(
-    new Context(),
-    new Input(fopen('php://stdin', 'r')),
-    new Output(fopen('php://stdout', 'w')),
-    new CodeCleaner(),
-    new ErrorHandler(),
-);
+// require token to validate against later requests
+$token = getenv('PHP_WORKBENCH_TOKEN');
+if ($token === false || $token === '') {
+    fwrite(STDERR, "Error: token required\n");
+    exit(1);
+}
 
-$loop = new ExecutionClosure($executor);
+try {
+    $executor = new Executor(
+        new Context(),
+        new Input(STDIN, $token),
+        new Output(STDOUT),
+        new CodeCleaner(),
+        new ErrorHandler(),
+    );
 
-$loop->execute();
+    $loop = new ExecutionClosure($executor);
+
+    $loop->execute();
+} catch (Throwable $e) {
+    fwrite(STDERR, $e->getMessage() . "\n");
+    exit($e->getCode() ?? 1);
+}

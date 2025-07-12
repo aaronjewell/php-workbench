@@ -4,10 +4,11 @@ import {
   createMessageConnection,
   StreamMessageReader,
   StreamMessageWriter,
-  RequestType2,
+  RequestType3,
   MessageConnection,
 } from 'vscode-jsonrpc/node';
 import * as path from 'path';
+import { randomBytes } from 'crypto';
 
 type EvalResponse = {
   stdout: string;
@@ -19,7 +20,7 @@ export type ExecuteCodeResponse = {
   error?: string;
 };
 
-const EvalRequest = new RequestType2<string, string, EvalResponse, void>('eval');
+const EvalRequest = new RequestType3<string, string, string, EvalResponse, void>('eval');
 
 let outputChannel: vscode.OutputChannel | undefined;
 let webviewPanel: vscode.WebviewPanel | undefined;
@@ -27,6 +28,37 @@ let webviewContent: string | undefined;
 let connection: MessageConnection | undefined;
 let php: ChildProcessWithoutNullStreams | undefined;
 let pharPath: string | undefined;
+let token: string | undefined;
+
+/**
+ * Generates a secure random token for PHP process authentication
+ *
+ * @returns A cryptographically secure random token
+ */
+function generateToken(): string {
+  return randomBytes(32).toString('hex');
+}
+
+/**
+ * Safely terminates a child process
+ *
+ * @param process - The child process to terminate
+ */
+function terminateProcess(process: ChildProcessWithoutNullStreams): void {
+  if (!process || process.killed) {
+    return;
+  }
+
+  process.removeAllListeners('exit');
+
+  try {
+    if (!process.kill('SIGTERM')) {
+      process.kill('SIGKILL');
+    }
+  } catch {
+    // Ignore errors during cleanup
+  }
+}
 
 /**
  * Gets the cached webview panel for the PHP Workbench results
@@ -124,11 +156,17 @@ async function getPhpEntrypoint(context: vscode.ExtensionContext): Promise<strin
     pharPath = context.asAbsolutePath('out/php-workbench.phar');
     await vscode.workspace.fs.stat(vscode.Uri.file(pharPath));
   } catch (error) {
+    getOutputChannel(context).appendLine(`Failed to stat PHP Workbench PHAR file: ${error}`);
     pharPath = context.asAbsolutePath('bin/workbench');
   }
 
+  getOutputChannel(context).appendLine(`Using PHP Workbench PHAR file: ${pharPath}`);
+
   context.subscriptions.push(
     new vscode.Disposable(() => {
+      getOutputChannel(context).appendLine(
+        `Disposing PHP Workbench PHAR file path on subscription disposal`
+      );
       pharPath = undefined;
     })
   );
@@ -138,9 +176,6 @@ async function getPhpEntrypoint(context: vscode.ExtensionContext): Promise<strin
 
 /**
  * Creates a new JSON-RPC connection to the PHP worker process
- *
- * Cleans up any existing PHP worker process before creating a new one
- * by sending a SIGKILL signal to the existing process.
  *
  * @param context - The extension context
  * @param recreate - Whether to recreate the connection if it already exists
@@ -155,48 +190,97 @@ async function getPhpConnection(
   }
 
   if (php && !php.killed) {
-    php.removeAllListeners('exit');
-    php.kill('SIGKILL');
+    getOutputChannel(context).appendLine(
+      `Terminating existing PHP worker process on connection recreation`
+    );
+    terminateProcess(php);
   }
 
-  php = spawn('php', [await getPhpEntrypoint(context)], {
-    stdio: ['pipe', 'pipe', 'pipe'],
+  // Generate a new token for this connection
+  token = generateToken();
+
+  try {
+    php = spawn('php', [await getPhpEntrypoint(context)], {
+      stdio: ['pipe', 'pipe', 'pipe'],
+      env: {
+        ...process.env,
+        PHP_WORKBENCH_TOKEN: token,
+      },
+    });
+  } catch (error) {
+    getOutputChannel(context).appendLine(`Failed to spawn PHP worker process: ${error}`);
+    throw error;
+  }
+
+  try {
+    var conn = createMessageConnection(
+      new StreamMessageReader(php.stdout),
+      new StreamMessageWriter(php.stdin)
+    );
+    conn.listen();
+    conn.onError(error => {
+      getOutputChannel(context).appendLine(`Error in connection to PHP worker process: ${error}`);
+    });
+    conn.onClose(() => {
+      getOutputChannel(context).appendLine(`Connection to PHP worker process closed`);
+    });
+    conn.onDispose(() => {
+      getOutputChannel(context).appendLine(`Connection to PHP worker process disposed`);
+    });
+  } catch (error) {
+    getOutputChannel(context).appendLine(
+      `Failed to create connection to PHP worker process: ${error}`
+    );
+    throw error;
+  }
+
+  php.stderr.on('data', data => {
+    getOutputChannel(context).append(data.toString());
   });
 
-  const conn = createMessageConnection(
-    new StreamMessageReader(php.stdout),
-    new StreamMessageWriter(php.stdin)
-  );
-  conn.listen();
+  php.on('error', error => {
+    getOutputChannel(context).appendLine(`Error in PHP worker process: ${error}`);
 
-  php.once('exit', (code, signal) => {
-    // TODO: Handle the ways that it can exit differently based on the signal and code
-    console.warn(`PHP worker exited (${signal ?? code}); respawning`);
     conn.dispose();
     if (connection === conn) {
       connection = undefined;
     }
+    php = undefined;
+    token = undefined;
+  });
+
+  php.once('exit', (code: number, signal: string) => {
+    getOutputChannel(context).appendLine(
+      `Background PHP process exited with code ${code} and signal ${signal}`
+    );
+    conn.dispose();
+    if (connection === conn) {
+      connection = undefined;
+    }
+    php = undefined;
+    token = undefined;
   });
 
   context.subscriptions.push(
     new vscode.Disposable(() => {
+      getOutputChannel(context).appendLine(
+        `Disposing connection to PHP worker process on subscription disposal`
+      );
       conn.dispose();
-      if (connection) {
+      if (connection === conn) {
         connection = undefined;
       }
-
       if (php) {
-        php.removeAllListeners('exit');
-        if (!php.kill()) {
-          php.kill('SIGKILL');
+        if (!php.killed) {
+          terminateProcess(php);
         }
         php = undefined;
       }
+      token = undefined;
     })
   );
 
   connection = conn;
-
   return connection;
 }
 
@@ -210,28 +294,6 @@ async function displayResult(
   context: vscode.ExtensionContext,
   result: ExecuteCodeResponse
 ): Promise<void> {
-  const channel = getOutputChannel(context);
-
-  channel.appendLine(
-    `--- PHP Workbench Execution (${new Date().toLocaleTimeString()}): ${result.result ? 'Success' : 'Error'} ---`
-  );
-
-  if (result.error) {
-    channel.appendLine('Error:');
-    channel.appendLine(result.error);
-  } else if (result.result) {
-    if (result.result.stdout) {
-      channel.appendLine('Output:');
-      channel.appendLine(result.result.stdout);
-    }
-    if (result.result.returnValue) {
-      channel.appendLine('Return Value:');
-      channel.appendLine(result.result.returnValue);
-    }
-  }
-
-  channel.appendLine('--- End ---');
-
   const panel = await getWebviewPanel(context);
   if (!panel.visible) {
     panel.reveal(vscode.ViewColumn.Beside, true);
@@ -311,7 +373,8 @@ export function activate(context: vscode.ExtensionContext) {
           EvalRequest,
           code,
           vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ||
-            path.dirname(editor.document.uri.fsPath)
+            path.dirname(editor.document.uri.fsPath),
+          token!
         );
         await displayResult(context, { result });
         return { result };
@@ -349,5 +412,29 @@ export function activate(context: vscode.ExtensionContext) {
  * Called by VS Code when the extension is deactivated.
  */
 export function deactivate() {
-  // Thank you for using PHP Workbench!
+  if (php) {
+    if (!php.killed) {
+      terminateProcess(php);
+    }
+    php = undefined;
+  }
+
+  if (connection) {
+    connection.dispose();
+    connection = undefined;
+  }
+
+  if (webviewPanel) {
+    webviewPanel.dispose();
+    webviewPanel = undefined;
+  }
+
+  if (outputChannel) {
+    outputChannel.dispose();
+    outputChannel = undefined;
+  }
+
+  webviewContent = undefined;
+  pharPath = undefined;
+  token = undefined;
 }
