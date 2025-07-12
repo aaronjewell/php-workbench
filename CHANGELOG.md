@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2025-07-11
+
 ### Added
 
 - **Webview Results Panel** - HTML panel for displaying PHP execution results in friendlier UI
