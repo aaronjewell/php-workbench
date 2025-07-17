@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Processed Code Diffs** - View the diff of the submitted original code compared to the processed code that is evaluated
+
+### Changed
+
+- **Duplicate Class Declaration Prevention** - Automatically wrap class declarations in exists checks so that repeated executions in the same session do not error
+
+### Technical
+
+- Use a more limited set of psysh CodeCleaner passes, and additional new one to handle namespaces and conditional class declarations
+
 ## [0.3.1] - 2025-01-12
 
 ### Security

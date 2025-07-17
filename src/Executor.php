@@ -4,13 +4,15 @@ declare(strict_types=1);
 
 namespace PhpWorkbench;
 
-use Psy\CodeCleaner;
 use Psy\CodeCleaner\NoReturnValue;
 use Psy\Context;
+use PhpWorkbench\CodeCleaner;
 use PhpWorkbench\Input;
 
 class Executor {
+
     protected bool $lastExecSuccess = false;
+
     protected string $code = '';
 
     public function __construct(
@@ -41,6 +43,8 @@ class Executor {
 
     public function addCode(string $code): void
     {
+        $dirty = $code;
+        
         // strip off <?php if exists
         $code = preg_replace('/^<\?php\s*/', '', $code);
 
@@ -52,6 +56,8 @@ class Executor {
 
         if ($clean = $this->cleaner->clean([ $code ])) {
             $this->code .= $clean;
+            $this->output->writeDirty($dirty);
+            $this->output->writeCleaned($clean);
         }
     }
 

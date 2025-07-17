@@ -8,11 +8,13 @@ import {
   MessageConnection,
 } from 'vscode-jsonrpc/node';
 import * as path from 'path';
-import { randomBytes } from 'crypto';
+import { randomBytes, createHash } from 'crypto';
 
 type EvalResponse = {
   stdout: string;
   returnValue: string;
+  dirty: string;
+  cleaned: string;
 };
 
 export type ExecuteCodeResponse = {
@@ -29,6 +31,46 @@ let connection: MessageConnection | undefined;
 let php: ChildProcessWithoutNullStreams | undefined;
 let pharPath: string | undefined;
 let token: string | undefined;
+
+/**
+ * Content provider for PHP Workbench diff documents
+ */
+class PHPWorkbenchContentProvider implements vscode.TextDocumentContentProvider {
+  private _onDidChange = new vscode.EventEmitter<vscode.Uri>();
+  public readonly onDidChange = this._onDidChange.event;
+
+  private content: Map<string, string> = new Map();
+
+  /**
+   * Sets content for a given URI
+   * @param uri - The URI to set content for
+   * @param content - The content to set
+   */
+  setContent(uri: vscode.Uri, content: string): void {
+    this.content.set(uri.toString(), content);
+    this._onDidChange.fire(uri);
+  }
+
+  /**
+   * Provides text document content for the given URI
+   * @param uri - The URI to provide content for
+   * @returns The content for the URI
+   */
+  provideTextDocumentContent(uri: vscode.Uri): string {
+    return this.content.get(uri.toString()) || '';
+  }
+
+  /**
+   * Clears stored content to free memory
+   */
+  clear(): void {
+    this.content.clear();
+  }
+}
+
+let contentProvider: PHPWorkbenchContentProvider | undefined;
+
+
 
 /**
  * Generates a secure random token for PHP process authentication
@@ -74,7 +116,10 @@ async function getWebviewPanel(context: vscode.ExtensionContext): Promise<vscode
   webviewPanel = vscode.window.createWebviewPanel(
     'phpWorkbench.results',
     'PHP Workbench Results',
-    vscode.ViewColumn.Beside,
+    {
+      viewColumn: vscode.ViewColumn.Beside,
+      preserveFocus: true,
+    },
     {
       enableScripts: true,
       retainContextWhenHidden: true,
@@ -82,6 +127,19 @@ async function getWebviewPanel(context: vscode.ExtensionContext): Promise<vscode
   );
 
   webviewPanel.webview.html = await getWebviewContent(context);
+
+  // Handle messages from the webview
+  webviewPanel.webview.onDidReceiveMessage(
+    async (message) => {
+      switch (message.type) {
+        case 'showDiff':
+          await showCodeDiff(context, message.dirty, message.cleaned);
+          break;
+      }
+    },
+    undefined,
+    context.subscriptions
+  );
 
   webviewPanel.onDidDispose(function (this: vscode.WebviewPanel) {
     if (webviewPanel === this) {
@@ -102,8 +160,10 @@ async function getWebviewPanel(context: vscode.ExtensionContext): Promise<vscode
  */
 async function getWebviewContent(context: vscode.ExtensionContext): Promise<string> {
   if (webviewContent) {
+    getOutputChannel(context).appendLine('Using cached webview content');
     return webviewContent;
   }
+  getOutputChannel(context).appendLine('Loading webview content');
   const buf = await vscode.workspace.fs.readFile(
     vscode.Uri.file(context.asAbsolutePath('out/webview.html'))
   );
@@ -284,6 +344,51 @@ async function getPhpConnection(
   return connection;
 }
 
+function getContentProvider(): PHPWorkbenchContentProvider {
+  if (!contentProvider) {
+    contentProvider = new PHPWorkbenchContentProvider();
+  }
+  return contentProvider;
+}
+
+/**
+ * Opens VS Code's native diff editor to compare dirty and cleaned code
+ *
+ * @param context - The extension context
+ * @param dirtyCode - The original dirty code
+ * @param cleanedCode - The cleaned code after processing
+ */
+async function showCodeDiff(context: vscode.ExtensionContext, dirtyCode: string, cleanedCode: string): Promise<void> {
+  try {
+    const contentProvider = getContentProvider();
+
+    // Create URIs for the virtual documents using content hash for deterministic uniqueness
+    const originalHash = createHash('sha256').update(dirtyCode).digest('hex');
+    const processedHash = createHash('sha256').update(cleanedCode).digest('hex');
+    const originalUri = vscode.Uri.parse(`php-workbench:${originalHash}.php`);
+    const processedUri = vscode.Uri.parse(`php-workbench:${processedHash}.php`);
+    
+    // Set content in the provider
+    contentProvider.setContent(originalUri, dirtyCode);
+    contentProvider.setContent(processedUri, cleanedCode);
+    
+    await vscode.commands.executeCommand(
+      'vscode.diff', 
+      originalUri, 
+      processedUri, 
+      'PHP Workbench: Original ↔ Processed',
+      {
+        viewColumn: vscode.ViewColumn.Active,
+        preview: true, // won't work if user has disabled preview mode
+      }
+    );
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    getOutputChannel(context).appendLine(`Failed to open diff editor: ${errorMessage}`);
+    vscode.window.showErrorMessage(`Failed to open diff editor: ${errorMessage}`);
+  }
+}
+
 /**
  * Displays execution results in both the PHP Workbench webview and output channel
  *
@@ -312,6 +417,8 @@ async function displayResult(
  * @param context - The extension context
  */
 export function activate(context: vscode.ExtensionContext) {
+  const providerRegistration = vscode.workspace.registerTextDocumentContentProvider('php-workbench', getContentProvider());
+
   // The commandId parameter must match the command field in package.json
   const newScratchpadCommand = vscode.commands.registerCommand(
     'phpWorkbench.newScratchpad',
@@ -376,9 +483,11 @@ export function activate(context: vscode.ExtensionContext) {
             path.dirname(editor.document.uri.fsPath),
           token!
         );
+        getOutputChannel(context).appendLine(JSON.stringify(result, null, 2));
         await displayResult(context, { result });
         return { result };
       } catch (err: any) {
+        getOutputChannel(context).appendLine(JSON.stringify(err, null, 2));
         const error = err instanceof Error ? err.message : String(err);
         await displayResult(context, { error });
         return { error };
@@ -404,7 +513,8 @@ export function activate(context: vscode.ExtensionContext) {
     newScratchpadCommand,
     executeCodeCommand,
     restartSessionCommand,
-    reportIssueCommand
+    reportIssueCommand,
+    providerRegistration,
   );
 }
 
@@ -432,6 +542,11 @@ export function deactivate() {
   if (outputChannel) {
     outputChannel.dispose();
     outputChannel = undefined;
+  }
+
+  if (contentProvider) {
+    contentProvider.clear();
+    contentProvider = undefined;
   }
 
   webviewContent = undefined;

@@ -6,6 +6,8 @@ namespace PhpWorkbench;
 
 class Output {
     protected string $stdoutBuffer = '';
+    protected string $dirty = '';
+    protected string $cleaned = '';
     protected ?\Throwable $lastException = null;
     protected mixed $returnValue = null;
 
@@ -30,6 +32,16 @@ class Output {
         $this->returnValue = \var_export($value, true);
     }
 
+    public function writeDirty(string $dirty): void
+    {
+        $this->dirty .= $dirty;
+    }
+
+    public function writeCleaned(string $cleaned): void
+    {
+        $this->cleaned .= $cleaned;
+    }
+
     public function getOutputBuffer(): string
     {
         return $this->stdoutBuffer;
@@ -42,7 +54,14 @@ class Output {
         @fwrite($this->resource, "Content-Length: ".strlen($body)."\r\n\r\n".$body);
         fflush($this->resource);
 
+        $this->reset();
+    }
+
+    protected function reset(): void
+    {
         $this->stdoutBuffer = '';
+        $this->dirty = '';
+        $this->cleaned = '';
         $this->lastException = null;
     }
 
@@ -62,6 +81,8 @@ class Output {
                 'result' => [
                     'stdout' => $this->stdoutBuffer,
                     'returnValue' => $this->returnValue,
+                    'dirty' => $this->dirty,
+                    'cleaned' => $this->cleaned,
                 ]
             ];
         }

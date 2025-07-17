@@ -5,8 +5,8 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
-use Psy\CodeCleaner;
 use Psy\Context;
+use PhpWorkbench\CodeCleaner;
 use PhpWorkbench\ErrorHandler;
 use PhpWorkbench\ExecutionClosure;
 use PhpWorkbench\Executor;

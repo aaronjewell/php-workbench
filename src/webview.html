@@ -144,6 +144,27 @@
       .hidden {
         display: none;
       }
+
+      .code-processing-notice {
+        padding: var(--spacing-md);
+        border-radius: var(--border-radius);
+      }
+
+      .code-processing-text {
+        font-size: var(--font-size-sm);
+        color: var(--vscode-textLink-foreground);
+        transition: color 0.2s ease;
+        line-height: 2;
+      }
+
+      .code-processing-text:hover {
+        cursor: pointer;
+        color: var(--vscode-textLink-activeForeground);
+      }
+
+      .code-processing-text:focus {
+        outline: 1px solid var(--vscode-focusBorder);
+      }
     </style>
   </head>
   <body>
@@ -180,6 +201,12 @@
         <div class="section-title">Error</div>
         <div id="error-content" class="code-block" data-type="error"></div>
       </div>
+
+      <div id="code-processing-section" class="hidden">
+        <div id="code-processing-notice" class="code-processing-notice" title="Click to see what changes were made prior to being executed" tabindex="0">
+          <span class="code-processing-text">Code was processed before execution</span>
+        </div>
+      </div>
     </div>
 
     <script>
@@ -195,12 +222,14 @@
           output: document.getElementById('output-section'),
           return: document.getElementById('return-section'),
           error: document.getElementById('error-section'),
+          codeProcessing: document.getElementById('code-processing-section'),
         },
         content: {
           output: document.getElementById('output-content'),
           return: document.getElementById('return-content'),
           error: document.getElementById('error-content'),
         },
+        codeProcessingNotice: document.getElementById('code-processing-notice'),
       };
 
       /**
@@ -238,6 +267,10 @@
         // Reset all sections
         Object.values(elements.sections).forEach(section => section.classList.add('hidden'));
 
+        // Clear stored code for diff view
+        currentDirtyCode = '';
+        currentCleanedCode = '';
+
         if (data.error) {
           elements.statusIndicator.textContent = 'Error';
           elements.statusIndicator.dataset.state = 'error';
@@ -259,6 +292,15 @@
               elements.sections[section].classList.remove('hidden');
             }
           });
+
+          // Show code processing section if dirty and cleaned code are available
+          if (data.result.dirty && data.result.cleaned) {
+            // Store the code for diff view
+            currentDirtyCode = data.result.dirty;
+            currentCleanedCode = data.result.cleaned;
+            
+            elements.sections.codeProcessing.classList.remove('hidden');
+          }
         }
       }
 
@@ -274,6 +316,39 @@
             break;
         }
       });
+
+      // Store current dirty and cleaned code for diff view
+      let currentDirtyCode = '';
+      let currentCleanedCode = '';
+
+      /**
+       * Opens the native VS Code diff editor
+       */
+      function openDiffEditor() {
+        if (currentDirtyCode && currentCleanedCode) {
+          // Provide user feedback
+          const notice = elements.codeProcessingNotice;
+          const originalText = notice.innerHTML;
+          
+          notice.innerHTML = '<span class="code-processing-text">⏳ Opening diff editor...</span>';
+          notice.style.cursor = 'wait';
+          
+          vscode.postMessage({
+            type: 'showDiff',
+            dirty: currentDirtyCode,
+            cleaned: currentCleanedCode
+          });
+          
+          // Reset notice after a short delay
+          setTimeout(() => {
+            notice.innerHTML = originalText;
+            notice.style.cursor = 'pointer';
+          }, 1000);
+        }
+      }
+
+      // Add event listeners for code processing notice
+      elements.codeProcessingNotice.addEventListener('click', openDiffEditor);
 
       updateTimestamp();
     </script>
