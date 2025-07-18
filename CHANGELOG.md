@@ -9,15 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Execution Timeout Protection** - Automatically terminate PHP execution after 2 seconds to prevent infinite loops from hanging the extension
 - **Processed Code Diffs** - View the diff of the submitted original code compared to the processed code that is evaluated
 
 ### Changed
 
 - **Duplicate Class Declaration Prevention** - Automatically wrap class declarations in exists checks so that repeated executions in the same session do not error
+- **Webview Architecture** - Refactored webview from static HTML file to dynamic generation with separate CSS and JavaScript files for better maintainability
+- **Build System** - Simplified build process by removing static webview.html file copying
 
 ### Technical
 
 - Use a more limited set of psysh CodeCleaner passes, and additional new one to handle namespaces and conditional class declarations
+- Enhanced test coverage for timeout handling, concurrent execution, and webview panel reuse
+- Improved webview resource management with proper CSP headers and nonce-based script loading
 
 ## [0.3.1] - 2025-01-12
 

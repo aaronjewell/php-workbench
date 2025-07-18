@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace PhpWorkbench;
 
 use PhpWorkbench\Executor;
+use PhpWorkbench\Timeout;
 
 class ExecutionClosure
 {
@@ -20,6 +21,7 @@ class ExecutionClosure
                     $executor->getInput();
 
                     try {
+                        Timeout::set(2);
                         $autoloader = getcwd() . '/vendor/autoload.php';
                         if (file_exists($autoloader)) {
                             require_once $autoloader;
@@ -43,6 +45,7 @@ class ExecutionClosure
 
                         throw $e;
                     } finally {
+                        Timeout::clear();
                         \restore_error_handler();
                     }
 

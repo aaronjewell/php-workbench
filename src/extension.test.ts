@@ -2,7 +2,6 @@ import * as vscode from 'vscode';
 import * as assert from 'assert';
 
 import type { ExecuteCodeResponse } from './extension';
-import { WebviewPanel } from 'vscode';
 
 suite('Extension Test Suite', () => {
   vscode.window.showInformationMessage('Start all tests.');
@@ -232,6 +231,22 @@ suite('Extension Test Suite', () => {
     );
     assert.equal(response.result!.stdout, 'mac1mac2');
     assert.equal(response.result!.returnValue, 'NULL');
+  });
+
+  test('phpWorkbench.executeCode should handle infinite loops with a timeout', async function () {
+    this.timeout(5000);
+    const document = await vscode.workspace.openTextDocument({
+      content: '<?php while(true);',
+      language: 'php',
+    });
+    await vscode.window.showTextDocument(document);
+
+    const response = await vscode.commands.executeCommand<ExecuteCodeResponse>(
+      'phpWorkbench.executeCode'
+    );
+
+    assert.ok(response.error!.includes('Execution timed out'));
+    assert.equal(typeof response.result, 'undefined');
   });
 
   test('phpWorkbench.executeCode should execute complex multiline PHP with mixed statements', async () => {
@@ -520,5 +535,81 @@ echo "after";`,
 
     assert.equal(response.error, 'Undefined variable $a');
     assert.equal(typeof response.result, 'undefined');
+  });
+
+  test('should reuse existing webview panel when available', async () => {
+    const document = await vscode.workspace.openTextDocument({
+      content: '<?php echo "first";',
+      language: 'php',
+    });
+    await vscode.window.showTextDocument(document);
+
+    // Execute first time
+    await vscode.commands.executeCommand('phpWorkbench.executeCode');
+
+    const initialTabCount = vscode.window.tabGroups.all.reduce(
+      (count, tabGroup) => count + tabGroup.tabs.length,
+      0
+    );
+
+    // Execute second time
+    await vscode.commands.executeCommand('phpWorkbench.executeCode');
+
+    const finalTabCount = vscode.window.tabGroups.all.reduce(
+      (count, tabGroup) => count + tabGroup.tabs.length,
+      0
+    );
+
+    // Should not create additional webview tabs
+    assert.equal(initialTabCount, finalTabCount);
+  });
+
+  test('should handle concurrent execution requests', async () => {
+    const document = await vscode.workspace.openTextDocument({
+      content: '<?php usleep(10000); echo "concurrent";',
+      language: 'php',
+    });
+    await vscode.window.showTextDocument(document);
+
+    // Execute multiple requests concurrently
+    const promises = Array.from({ length: 5 }, () =>
+      vscode.commands.executeCommand<ExecuteCodeResponse>('phpWorkbench.executeCode')
+    );
+
+    const responses = await Promise.all(promises);
+
+    // All requests should complete without errors
+    responses.forEach(response => {
+      assert.equal(response.result?.stdout, 'concurrent');
+    });
+  });
+
+  test('should handle extension activation and deactivation', async () => {
+    const extension = vscode.extensions.getExtension('aaronjewell.php-workbench')!;
+
+    // Extension should be active after running tests
+    assert.ok(extension.isActive);
+
+    // Test that commands are registered
+    const commands = await vscode.commands.getCommands();
+    assert.ok(commands.includes('phpWorkbench.newScratchpad'));
+    assert.ok(commands.includes('phpWorkbench.executeCode'));
+    assert.ok(commands.includes('phpWorkbench.restartSession'));
+    assert.ok(commands.includes('phpWorkbench.reportIssue'));
+  });
+
+  test('should handle very large output', async () => {
+    const document = await vscode.workspace.openTextDocument({
+      content: '<?php for($i = 0; $i < 1000; $i++) { echo str_repeat("A", 100); }',
+      language: 'php',
+    });
+    await vscode.window.showTextDocument(document);
+
+    const response = await vscode.commands.executeCommand<ExecuteCodeResponse>(
+      'phpWorkbench.executeCode'
+    );
+
+    assert.ok(response.result);
+    assert.ok(typeof response.result.stdout === 'string');
   });
 });

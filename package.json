@@ -93,7 +93,7 @@
   "scripts": {
     "vscode:prepublish": "npm run clean && npm run format && npm run compile && npm run build:phar",
     "clean": "rm -rf out",
-    "copy": "mkdir -p out && cp src/webview.html out/webview.html",
+    "copy": "mkdir -p out",
     "precompile": "npm run clean && npm run copy",
     "compile": "tsc -p ./",
     "prewatch": "npm run clean && npm run copy",

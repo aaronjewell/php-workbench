@@ -26,7 +26,6 @@ const EvalRequest = new RequestType3<string, string, string, EvalResponse, void>
 
 let outputChannel: vscode.OutputChannel | undefined;
 let webviewPanel: vscode.WebviewPanel | undefined;
-let webviewContent: string | undefined;
 let connection: MessageConnection | undefined;
 let php: ChildProcessWithoutNullStreams | undefined;
 let pharPath: string | undefined;
@@ -35,7 +34,7 @@ let token: string | undefined;
 /**
  * Content provider for PHP Workbench diff documents
  */
-class PHPWorkbenchContentProvider implements vscode.TextDocumentContentProvider {
+class VirtualCodeContentProvider implements vscode.TextDocumentContentProvider {
   private _onDidChange = new vscode.EventEmitter<vscode.Uri>();
   public readonly onDidChange = this._onDidChange.event;
 
@@ -68,9 +67,7 @@ class PHPWorkbenchContentProvider implements vscode.TextDocumentContentProvider 
   }
 }
 
-let contentProvider: PHPWorkbenchContentProvider | undefined;
-
-
+let contentProvider: VirtualCodeContentProvider | undefined;
 
 /**
  * Generates a secure random token for PHP process authentication
@@ -126,11 +123,11 @@ async function getWebviewPanel(context: vscode.ExtensionContext): Promise<vscode
     }
   );
 
-  webviewPanel.webview.html = await getWebviewContent(context);
+  webviewPanel.webview.html = getHtmlForWebview(webviewPanel.webview, context.extensionUri);
 
   // Handle messages from the webview
   webviewPanel.webview.onDidReceiveMessage(
-    async (message) => {
+    async message => {
       switch (message.type) {
         case 'showDiff':
           await showCodeDiff(context, message.dirty, message.cleaned);
@@ -152,30 +149,74 @@ async function getWebviewPanel(context: vscode.ExtensionContext): Promise<vscode
   return webviewPanel;
 }
 
-/**
- * Gets the cached HTML content for the PHP Workbench results webview
- *
- * @param context - The extension context
- * @returns The HTML content for the PHP Workbench results webview
- */
-async function getWebviewContent(context: vscode.ExtensionContext): Promise<string> {
-  if (webviewContent) {
-    getOutputChannel(context).appendLine('Using cached webview content');
-    return webviewContent;
+function getNonce() {
+  let text = '';
+  const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  for (let i = 0; i < 32; i++) {
+    text += possible.charAt(Math.floor(Math.random() * possible.length));
   }
-  getOutputChannel(context).appendLine('Loading webview content');
-  const buf = await vscode.workspace.fs.readFile(
-    vscode.Uri.file(context.asAbsolutePath('out/webview.html'))
-  );
-  webviewContent = new TextDecoder('utf-8').decode(buf);
+  return text;
+}
 
-  context.subscriptions.push(
-    new vscode.Disposable(() => {
-      webviewContent = undefined;
-    })
-  );
+function getHtmlForWebview(webview: vscode.Webview, extensionUri: vscode.Uri) {
+  const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, 'media', 'main.js'));
+  const styleUri = webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, 'media', 'main.css'));
 
-  return webviewContent;
+  const nonce = getNonce();
+  return `<!DOCTYPE html>
+          <html lang="en">
+          <head>
+              <meta charset="UTF-8" />
+              <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource}; script-src 'nonce-${nonce}';">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+              <title>PHP Workbench Results</title>
+              <link href="${styleUri}" rel="stylesheet">
+          </head>
+          <body>
+              <div class="header">
+                  <div class="title">PHP Workbench Results</div>
+                  <div class="status-badge-container">
+                      <div id="status-indicator" class="status-badge hidden"></div>
+                      <div class="timestamp" id="timestamp"></div>
+                  </div>
+              </div>
+
+              <div id="empty-state" class="state-display">
+                  <h3>Ready to execute PHP code</h3>
+                  <p>
+                      Use <strong>Ctrl+Enter</strong> (or <strong>Cmd+Enter</strong> on Mac) to execute your code
+                      and see results here.
+                  </p>
+              </div>
+
+              <div id="loading" class="state-display loading hidden">Executing PHP code...</div>
+
+              <div id="results" class="content hidden">
+                  <div id="output-section" class="section hidden">
+                      <div class="section-title">Output</div>
+                      <div id="output-content" class="code-block"></div>
+                  </div>
+
+                  <div id="return-section" class="section hidden">
+                      <div class="section-title">Return Value</div>
+                      <div id="return-content" class="code-block"></div>
+                  </div>
+
+                  <div id="error-section" class="section hidden">
+                      <div class="section-title">Error</div>
+                      <div id="error-content" class="code-block" data-type="error"></div>
+                  </div>
+
+                  <div id="code-processing-section" class="hidden">
+                      <div id="code-processing-notice" class="code-processing-notice" title="Click to see what changes were made prior to being executed" tabindex="0">
+                      <span class="code-processing-text">Code was processed before execution</span>
+                      </div>
+                  </div>
+              </div>
+
+      <script nonce="${nonce}" src="${scriptUri}"></script>
+          </body>
+      </html>`;
 }
 
 /**
@@ -344,9 +385,9 @@ async function getPhpConnection(
   return connection;
 }
 
-function getContentProvider(): PHPWorkbenchContentProvider {
+function getContentProvider(): VirtualCodeContentProvider {
   if (!contentProvider) {
-    contentProvider = new PHPWorkbenchContentProvider();
+    contentProvider = new VirtualCodeContentProvider();
   }
   return contentProvider;
 }
@@ -358,7 +399,11 @@ function getContentProvider(): PHPWorkbenchContentProvider {
  * @param dirtyCode - The original dirty code
  * @param cleanedCode - The cleaned code after processing
  */
-async function showCodeDiff(context: vscode.ExtensionContext, dirtyCode: string, cleanedCode: string): Promise<void> {
+async function showCodeDiff(
+  context: vscode.ExtensionContext,
+  dirtyCode: string,
+  cleanedCode: string
+): Promise<void> {
   try {
     const contentProvider = getContentProvider();
 
@@ -367,15 +412,15 @@ async function showCodeDiff(context: vscode.ExtensionContext, dirtyCode: string,
     const processedHash = createHash('sha256').update(cleanedCode).digest('hex');
     const originalUri = vscode.Uri.parse(`php-workbench:${originalHash}.php`);
     const processedUri = vscode.Uri.parse(`php-workbench:${processedHash}.php`);
-    
+
     // Set content in the provider
     contentProvider.setContent(originalUri, dirtyCode);
     contentProvider.setContent(processedUri, cleanedCode);
-    
+
     await vscode.commands.executeCommand(
-      'vscode.diff', 
-      originalUri, 
-      processedUri, 
+      'vscode.diff',
+      originalUri,
+      processedUri,
       'PHP Workbench: Original ↔ Processed',
       {
         viewColumn: vscode.ViewColumn.Active,
@@ -417,16 +462,16 @@ async function displayResult(
  * @param context - The extension context
  */
 export function activate(context: vscode.ExtensionContext) {
-  const providerRegistration = vscode.workspace.registerTextDocumentContentProvider('php-workbench', getContentProvider());
+  const providerRegistration = vscode.workspace.registerTextDocumentContentProvider(
+    'php-workbench',
+    getContentProvider()
+  );
 
   // The commandId parameter must match the command field in package.json
   const newScratchpadCommand = vscode.commands.registerCommand(
     'phpWorkbench.newScratchpad',
     async () => {
       try {
-        // preload the webview content to reduce the initial load time
-        await getWebviewContent(context);
-
         const document = await vscode.workspace.openTextDocument({
           language: 'php',
           content: '<?php\n\n',
@@ -514,7 +559,7 @@ export function activate(context: vscode.ExtensionContext) {
     executeCodeCommand,
     restartSessionCommand,
     reportIssueCommand,
-    providerRegistration,
+    providerRegistration
   );
 }
 
@@ -549,7 +594,6 @@ export function deactivate() {
     contentProvider = undefined;
   }
 
-  webviewContent = undefined;
   pharPath = undefined;
   token = undefined;
 }

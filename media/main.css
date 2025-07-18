@@ -1,0 +1,161 @@
+:root {
+  --border-radius: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 12px;
+  --spacing-lg: 15px;
+  --spacing-xl: 20px;
+  --font-mono: var(--vscode-editor-font-family, 'Consolas', 'Monaco', 'Courier New', monospace);
+  --font-size-sm: 12px;
+  --font-size-md: 14px;
+  --font-size-lg: 18px;
+}
+
+body {
+  font-family: var(--vscode-font-family, 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif);
+  /* background-color: var(--vscode-editor-background); */
+  color: var(--vscode-foreground);
+  margin: 0;
+  padding: var(--spacing-xl);
+  line-height: 1.6;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--vscode-panel-border);
+  margin-bottom: var(--spacing-xl);
+}
+
+.title {
+  font-size: var(--font-size-lg);
+  font-weight: bold;
+}
+
+.timestamp {
+  font-size: var(--font-size-sm);
+  color: var(--vscode-descriptionForeground);
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 4px var(--spacing-sm);
+  border-radius: var(--border-radius);
+  font-size: var(--font-size-sm);
+  font-weight: bold;
+  text-transform: uppercase;
+  background-color: var(--vscode-badge-background);
+  color: var(--vscode-badge-foreground);
+}
+
+.status-badge[data-state='error'] {
+  background-color: var(--vscode-activityErrorBadge-background);
+  color: var(--vscode-activityErrorBadge-foreground);
+}
+
+.status-badge-container {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.content {
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: var(--border-radius);
+  overflow: hidden;
+}
+
+.section {
+  padding: var(--spacing-lg);
+  border-bottom: 1px solid var(--vscode-panel-border);
+}
+
+.section:last-child {
+  border-bottom: none;
+}
+
+.section-title {
+  font-size: var(--font-size-md);
+  font-weight: bold;
+  margin-bottom: var(--spacing-sm);
+}
+
+.code-block {
+  background-color: var(--vscode-textCodeBlock-background);
+  border: 1px solid var(--vscode-text);
+  border-radius: var(--border-radius);
+  padding: var(--spacing-md);
+  font-family: var(--font-mono);
+  font-size: var(--vscode-editor-font-size, var(--font-size-md));
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.code-block[data-type='error'] {
+  color: var(--vscode-errorForeground);
+}
+
+.state-display {
+  text-align: center;
+  padding: 40px;
+  color: var(--vscode-descriptionForeground);
+}
+
+.state-display h3 {
+  margin-bottom: 10px;
+}
+
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.loading::before {
+  content: '';
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--vscode-progressBar-background);
+  border-top: 2px solid var(--vscode-textLink-foreground);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-right: 10px;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.hidden {
+  display: none;
+}
+
+.code-processing-notice {
+  padding: var(--spacing-md);
+  border-radius: var(--border-radius);
+}
+
+.code-processing-text {
+  font-size: var(--font-size-sm);
+  color: var(--vscode-textLink-foreground);
+  transition: color 0.2s ease;
+  line-height: 2;
+}
+
+.code-processing-text:hover {
+  cursor: pointer;
+  color: var(--vscode-textLink-activeForeground);
+}
+
+.code-processing-text:focus {
+  outline: 1px solid var(--vscode-focusBorder);
+}
