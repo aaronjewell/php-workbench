@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import * as assert from 'assert';
 
-import type { ExecuteCodeResponse } from './extension';
+import type { ExecuteCodeResponse } from './rpc';
 
 suite('Extension Test Suite', () => {
   vscode.window.showInformationMessage('Start all tests.');

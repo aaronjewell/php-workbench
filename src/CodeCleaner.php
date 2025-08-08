@@ -10,11 +10,7 @@ use PhpParser\PrettyPrinter\Standard as PrettyPrinter;
 use PhpWorkbench\ClearableTraverser;
 use PhpWorkbench\PreventDuplicateClassPass;
 use Psy\CodeCleaner as PsyCodeCleaner;
-use Psy\CodeCleaner\ImplicitReturnPass;
-use Psy\CodeCleaner\MagicConstantsPass;
 use Psy\CodeCleaner\NamespacePass;
-use Psy\CodeCleaner\RequirePass;
-use Psy\CodeCleaner\StrictTypesPass;
 use Psy\CodeCleaner\UseStatementPass;
 use Psy\ParserFactory;
 
@@ -41,12 +37,8 @@ class CodeCleaner extends PsyCodeCleaner
     private function getDefaultPasses(): array
     {
         return [
-            new UseStatementPass(), // Must run before the namespace pass
-            new ImplicitReturnPass(),
-            new MagicConstantsPass(),
-            new NamespacePass($this), // Must run after the implicit return pass
-            new RequirePass(),
-            // new StrictTypesPass(true),
+            new UseStatementPass(),
+            new NamespacePass($this),
             new NameResolver(null, ['replaceNodes' => false]),
             new PreventDuplicateClassPass($this),
         ];

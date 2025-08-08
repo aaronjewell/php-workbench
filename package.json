@@ -68,27 +68,30 @@
         }
       ]
     },
-    "configuration": {
-      "type": "object",
-      "title": "PHP Workbench",
-      "properties": {
-        "phpWorkbench.useInteractiveMode": {
-          "type": "boolean",
-          "default": false,
-          "description": "Enable interactive REPL mode with persistent PHP session using PsySH"
-        },
-        "phpWorkbench.psyshPath": {
-          "type": "string",
-          "default": "",
-          "description": "Custom path to PsySH .phar file (leave empty to use bundled version)"
-        },
-        "phpWorkbench.sessionTimeout": {
-          "type": "number",
-          "default": 300000,
-          "description": "Session timeout in milliseconds (300000 = 5 minutes)"
+    "viewsContainers": {
+      "panel": [
+        {
+          "id": "phpWorkbench",
+          "title": "PHP Workbench",
+          "icon": ""
         }
+      ]
+    },
+    "views": {
+      "phpWorkbench": [
+        {
+          "id": "phpWorkbench.results",
+          "name": "Results",
+          "type": "webview"
+        }
+      ]
+    },
+    "taskDefinitions": [
+      {
+        "type": "php-workbench.session",
+        "label": "PHP Workbench Session"
       }
-    }
+    ]
   },
   "scripts": {
     "vscode:prepublish": "npm run clean && npm run format && npm run compile && npm run build:phar",

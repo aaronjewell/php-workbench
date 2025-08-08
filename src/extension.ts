@@ -1,247 +1,11 @@
 import * as vscode from 'vscode';
-import { spawn, ChildProcessWithoutNullStreams } from 'child_process';
-import {
-  createMessageConnection,
-  StreamMessageReader,
-  StreamMessageWriter,
-  RequestType3,
-  MessageConnection,
-} from 'vscode-jsonrpc/node';
-import * as path from 'path';
-import { randomBytes, createHash } from 'crypto';
+import { DiffContentProvider } from './diff';
+import { ExecuteCodeResponse, RpcServer } from './rpc';
+import path from 'node:path';
+import { Session } from './session';
+import { ResultsViewProvider } from './results';
 
-type EvalResponse = {
-  stdout: string;
-  returnValue: string;
-  dirty: string;
-  cleaned: string;
-};
-
-export type ExecuteCodeResponse = {
-  result?: EvalResponse;
-  error?: string;
-};
-
-const EvalRequest = new RequestType3<string, string, string, EvalResponse, void>('eval');
-
-let outputChannel: vscode.OutputChannel | undefined;
-let webviewPanel: vscode.WebviewPanel | undefined;
-let connection: MessageConnection | undefined;
-let php: ChildProcessWithoutNullStreams | undefined;
-let pharPath: string | undefined;
-let token: string | undefined;
-
-/**
- * Content provider for PHP Workbench diff documents
- */
-class VirtualCodeContentProvider implements vscode.TextDocumentContentProvider {
-  private _onDidChange = new vscode.EventEmitter<vscode.Uri>();
-  public readonly onDidChange = this._onDidChange.event;
-
-  private content: Map<string, string> = new Map();
-
-  /**
-   * Sets content for a given URI
-   * @param uri - The URI to set content for
-   * @param content - The content to set
-   */
-  setContent(uri: vscode.Uri, content: string): void {
-    this.content.set(uri.toString(), content);
-    this._onDidChange.fire(uri);
-  }
-
-  /**
-   * Provides text document content for the given URI
-   * @param uri - The URI to provide content for
-   * @returns The content for the URI
-   */
-  provideTextDocumentContent(uri: vscode.Uri): string {
-    return this.content.get(uri.toString()) || '';
-  }
-
-  /**
-   * Clears stored content to free memory
-   */
-  clear(): void {
-    this.content.clear();
-  }
-}
-
-let contentProvider: VirtualCodeContentProvider | undefined;
-
-/**
- * Generates a secure random token for PHP process authentication
- *
- * @returns A cryptographically secure random token
- */
-function generateToken(): string {
-  return randomBytes(32).toString('hex');
-}
-
-/**
- * Safely terminates a child process
- *
- * @param process - The child process to terminate
- */
-function terminateProcess(process: ChildProcessWithoutNullStreams): void {
-  if (!process || process.killed) {
-    return;
-  }
-
-  process.removeAllListeners('exit');
-
-  try {
-    if (!process.kill('SIGTERM')) {
-      process.kill('SIGKILL');
-    }
-  } catch {
-    // Ignore errors during cleanup
-  }
-}
-
-/**
- * Gets the cached webview panel for the PHP Workbench results
- *
- * @param context - The extension context
- * @returns The webview panel for the PHP Workbench results
- */
-async function getWebviewPanel(context: vscode.ExtensionContext): Promise<vscode.WebviewPanel> {
-  if (webviewPanel) {
-    return webviewPanel;
-  }
-
-  webviewPanel = vscode.window.createWebviewPanel(
-    'phpWorkbench.results',
-    'PHP Workbench Results',
-    {
-      viewColumn: vscode.ViewColumn.Beside,
-      preserveFocus: true,
-    },
-    {
-      enableScripts: true,
-      retainContextWhenHidden: true,
-    }
-  );
-
-  webviewPanel.webview.html = getHtmlForWebview(webviewPanel.webview, context.extensionUri);
-
-  // Handle messages from the webview
-  webviewPanel.webview.onDidReceiveMessage(
-    async message => {
-      switch (message.type) {
-        case 'showDiff':
-          await showCodeDiff(context, message.dirty, message.cleaned);
-          break;
-      }
-    },
-    undefined,
-    context.subscriptions
-  );
-
-  webviewPanel.onDidDispose(function (this: vscode.WebviewPanel) {
-    if (webviewPanel === this) {
-      webviewPanel = undefined;
-    }
-  }, webviewPanel);
-
-  context.subscriptions.push(webviewPanel);
-
-  return webviewPanel;
-}
-
-function getNonce() {
-  let text = '';
-  const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  for (let i = 0; i < 32; i++) {
-    text += possible.charAt(Math.floor(Math.random() * possible.length));
-  }
-  return text;
-}
-
-function getHtmlForWebview(webview: vscode.Webview, extensionUri: vscode.Uri) {
-  const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, 'media', 'main.js'));
-  const styleUri = webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, 'media', 'main.css'));
-
-  const nonce = getNonce();
-  return `<!DOCTYPE html>
-          <html lang="en">
-          <head>
-              <meta charset="UTF-8" />
-              <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource}; script-src 'nonce-${nonce}';">
-              <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-              <title>PHP Workbench Results</title>
-              <link href="${styleUri}" rel="stylesheet">
-          </head>
-          <body>
-              <div class="header">
-                  <div class="title">PHP Workbench Results</div>
-                  <div class="status-badge-container">
-                      <div id="status-indicator" class="status-badge hidden"></div>
-                      <div class="timestamp" id="timestamp"></div>
-                  </div>
-              </div>
-
-              <div id="empty-state" class="state-display">
-                  <h3>Ready to execute PHP code</h3>
-                  <p>
-                      Use <strong>Ctrl+Enter</strong> (or <strong>Cmd+Enter</strong> on Mac) to execute your code
-                      and see results here.
-                  </p>
-              </div>
-
-              <div id="loading" class="state-display loading hidden">Executing PHP code...</div>
-
-              <div id="results" class="content hidden">
-                  <div id="output-section" class="section hidden">
-                      <div class="section-title">Output</div>
-                      <div id="output-content" class="code-block"></div>
-                  </div>
-
-                  <div id="return-section" class="section hidden">
-                      <div class="section-title">Return Value</div>
-                      <div id="return-content" class="code-block"></div>
-                  </div>
-
-                  <div id="error-section" class="section hidden">
-                      <div class="section-title">Error</div>
-                      <div id="error-content" class="code-block" data-type="error"></div>
-                  </div>
-
-                  <div id="code-processing-section" class="hidden">
-                      <div id="code-processing-notice" class="code-processing-notice" title="Click to see what changes were made prior to being executed" tabindex="0">
-                      <span class="code-processing-text">Code was processed before execution</span>
-                      </div>
-                  </div>
-              </div>
-
-      <script nonce="${nonce}" src="${scriptUri}"></script>
-          </body>
-      </html>`;
-}
-
-/**
- * Gets the cached output channel for the PHP Workbench extension
- *
- * @returns The output channel for the PHP Workbench extension
- */
-function getOutputChannel(context: vscode.ExtensionContext): vscode.OutputChannel {
-  if (outputChannel) {
-    return outputChannel;
-  }
-
-  const channel = vscode.window.createOutputChannel('PHP Workbench');
-
-  context.subscriptions.push(
-    new vscode.Disposable(() => {
-      channel.dispose();
-      outputChannel = undefined;
-    })
-  );
-
-  outputChannel = channel;
-
-  return channel;
-}
+let rpc: RpcServer | undefined;
 
 /**
  * Gets the cached path to the PHP Workbench PHAR file
@@ -250,221 +14,78 @@ function getOutputChannel(context: vscode.ExtensionContext): vscode.OutputChanne
  * @returns The path to the PHP Workbench PHAR file
  */
 async function getPhpEntrypoint(context: vscode.ExtensionContext): Promise<string> {
-  if (pharPath) {
-    return pharPath;
-  }
   try {
-    pharPath = context.asAbsolutePath('out/php-workbench.phar');
+    const pharPath = context.asAbsolutePath('out/php-workbench.phar');
     await vscode.workspace.fs.stat(vscode.Uri.file(pharPath));
+    return pharPath;
   } catch (error) {
-    getOutputChannel(context).appendLine(`Failed to stat PHP Workbench PHAR file: ${error}`);
-    pharPath = context.asAbsolutePath('bin/workbench');
+    return context.asAbsolutePath('bin/workbench');
+  }
+}
+
+async function createRpcServer(context: vscode.ExtensionContext): Promise<RpcServer> {
+  if (rpc) {
+    rpc.dispose();
   }
 
-  getOutputChannel(context).appendLine(`Using PHP Workbench PHAR file: ${pharPath}`);
+  const entrypoint = await getPhpEntrypoint(context);
 
-  context.subscriptions.push(
-    new vscode.Disposable(() => {
-      getOutputChannel(context).appendLine(
-        `Disposing PHP Workbench PHAR file path on subscription disposal`
-      );
-      pharPath = undefined;
-    })
-  );
+  vscode.window.showInformationMessage(`PHP Workbench: Using entrypoint: ${entrypoint}`);
 
-  return pharPath;
+  const session = new Session({
+    command: 'php',
+    args: [await getPhpEntrypoint(context)],
+    env: process.env,
+    cwd: vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ||
+        path.dirname(vscode.window.activeTextEditor?.document.uri.fsPath || ''),
+  });
+
+  const execution = await vscode.tasks.executeTask(session.task!);
+
+  rpc = new RpcServer(session);
+
+  await rpc.listen();
+
+  rpc.onDidError((error) => {
+    vscode.window.showErrorMessage(`PHP Workbench: ${error}`);
+    execution.terminate();
+    rpc = undefined;
+  });
+
+  rpc.onDidExit((code) => {
+    vscode.window.showInformationMessage(`PHP Workbench: Session exited with code ${code}`);
+    execution.terminate();
+    rpc = undefined;
+  });
+
+  return rpc;
 }
 
 /**
- * Creates a new JSON-RPC connection to the PHP worker process
- *
- * @param context - The extension context
- * @param recreate - Whether to recreate the connection if it already exists
- * @returns The JSON-RPC connection to the PHP worker process
- */
-async function getPhpConnection(
-  context: vscode.ExtensionContext,
-  recreate: boolean = false
-): Promise<MessageConnection> {
-  if (connection && !recreate) {
-    return connection;
-  }
-
-  if (php && !php.killed) {
-    getOutputChannel(context).appendLine(
-      `Terminating existing PHP worker process on connection recreation`
-    );
-    terminateProcess(php);
-  }
-
-  // Generate a new token for this connection
-  token = generateToken();
-
-  try {
-    php = spawn('php', [await getPhpEntrypoint(context)], {
-      stdio: ['pipe', 'pipe', 'pipe'],
-      env: {
-        ...process.env,
-        PHP_WORKBENCH_TOKEN: token,
-      },
-    });
-  } catch (error) {
-    getOutputChannel(context).appendLine(`Failed to spawn PHP worker process: ${error}`);
-    throw error;
-  }
-
-  try {
-    var conn = createMessageConnection(
-      new StreamMessageReader(php.stdout),
-      new StreamMessageWriter(php.stdin)
-    );
-    conn.listen();
-    conn.onError(error => {
-      getOutputChannel(context).appendLine(`Error in connection to PHP worker process: ${error}`);
-    });
-    conn.onClose(() => {
-      getOutputChannel(context).appendLine(`Connection to PHP worker process closed`);
-    });
-    conn.onDispose(() => {
-      getOutputChannel(context).appendLine(`Connection to PHP worker process disposed`);
-    });
-  } catch (error) {
-    getOutputChannel(context).appendLine(
-      `Failed to create connection to PHP worker process: ${error}`
-    );
-    throw error;
-  }
-
-  php.stderr.on('data', data => {
-    getOutputChannel(context).append(data.toString());
-  });
-
-  php.on('error', error => {
-    getOutputChannel(context).appendLine(`Error in PHP worker process: ${error}`);
-
-    conn.dispose();
-    if (connection === conn) {
-      connection = undefined;
-    }
-    php = undefined;
-    token = undefined;
-  });
-
-  php.once('exit', (code: number, signal: string) => {
-    getOutputChannel(context).appendLine(
-      `Background PHP process exited with code ${code} and signal ${signal}`
-    );
-    conn.dispose();
-    if (connection === conn) {
-      connection = undefined;
-    }
-    php = undefined;
-    token = undefined;
-  });
-
-  context.subscriptions.push(
-    new vscode.Disposable(() => {
-      getOutputChannel(context).appendLine(
-        `Disposing connection to PHP worker process on subscription disposal`
-      );
-      conn.dispose();
-      if (connection === conn) {
-        connection = undefined;
-      }
-      if (php) {
-        if (!php.killed) {
-          terminateProcess(php);
-        }
-        php = undefined;
-      }
-      token = undefined;
-    })
-  );
-
-  connection = conn;
-  return connection;
-}
-
-function getContentProvider(): VirtualCodeContentProvider {
-  if (!contentProvider) {
-    contentProvider = new VirtualCodeContentProvider();
-  }
-  return contentProvider;
-}
-
-/**
- * Opens VS Code's native diff editor to compare dirty and cleaned code
- *
- * @param context - The extension context
- * @param dirtyCode - The original dirty code
- * @param cleanedCode - The cleaned code after processing
- */
-async function showCodeDiff(
-  context: vscode.ExtensionContext,
-  dirtyCode: string,
-  cleanedCode: string
-): Promise<void> {
-  try {
-    const contentProvider = getContentProvider();
-
-    // Create URIs for the virtual documents using content hash for deterministic uniqueness
-    const originalHash = createHash('sha256').update(dirtyCode).digest('hex');
-    const processedHash = createHash('sha256').update(cleanedCode).digest('hex');
-    const originalUri = vscode.Uri.parse(`php-workbench:${originalHash}.php`);
-    const processedUri = vscode.Uri.parse(`php-workbench:${processedHash}.php`);
-
-    // Set content in the provider
-    contentProvider.setContent(originalUri, dirtyCode);
-    contentProvider.setContent(processedUri, cleanedCode);
-
-    await vscode.commands.executeCommand(
-      'vscode.diff',
-      originalUri,
-      processedUri,
-      'PHP Workbench: Original ↔ Processed',
-      {
-        viewColumn: vscode.ViewColumn.Active,
-        preview: true, // won't work if user has disabled preview mode
-      }
-    );
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    getOutputChannel(context).appendLine(`Failed to open diff editor: ${errorMessage}`);
-    vscode.window.showErrorMessage(`Failed to open diff editor: ${errorMessage}`);
-  }
-}
-
-/**
- * Displays execution results in both the PHP Workbench webview and output channel
- *
- * @param context - The extension context
- * @param result - The execution result to display
- */
-async function displayResult(
-  context: vscode.ExtensionContext,
-  result: ExecuteCodeResponse
-): Promise<void> {
-  const panel = await getWebviewPanel(context);
-  if (!panel.visible) {
-    panel.reveal(vscode.ViewColumn.Beside, true);
-  }
-  panel.webview.postMessage({
-    type: 'executionResult',
-    data: result,
-  });
-}
-
-/**
- * Called by VS Code when the extension is activated, the very first time a command is executed.
+ * Called by VS Code when the extension is activated.
  *
  * Registers the commands for the PHP Workbench extension.
  *
  * @param context - The extension context
  */
 export function activate(context: vscode.ExtensionContext) {
+  const diffProvider = new DiffContentProvider();
+
   const providerRegistration = vscode.workspace.registerTextDocumentContentProvider(
     'php-workbench',
-    getContentProvider()
+    diffProvider
+  );
+
+  const resultsViewProvider = new ResultsViewProvider(context.extensionUri, diffProvider);
+
+  const resultsViewRegistration = vscode.window.registerWebviewViewProvider(
+    'phpWorkbench.results',
+    resultsViewProvider,
+    {
+      webviewOptions: {
+        retainContextWhenHidden: true,
+      },
+    }
   );
 
   // The commandId parameter must match the command field in package.json
@@ -491,7 +112,7 @@ export function activate(context: vscode.ExtensionContext) {
     'phpWorkbench.restartSession',
     async (): Promise<void> => {
       try {
-        await getPhpConnection(context, true);
+        await createRpcServer(context);
         vscode.window.showInformationMessage('PHP Workbench: Session restarted');
       } catch (error) {
         vscode.window.showErrorMessage(`Failed to restart session: ${error}`);
@@ -508,33 +129,27 @@ export function activate(context: vscode.ExtensionContext) {
       }
 
       try {
-        const [conn, panel] = await Promise.all([
-          getPhpConnection(context),
-          getWebviewPanel(context),
-        ]);
-
         const code = !editor.selection.isEmpty
           ? editor.document.getText(editor.selection)
           : editor.document.getText();
 
-        panel.webview.postMessage({
-          type: 'executionStarted',
-        });
+        await resultsViewProvider.startExecution();
 
-        const result = await conn.sendRequest(
-          EvalRequest,
-          code,
-          vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ||
-            path.dirname(editor.document.uri.fsPath),
-          token!
-        );
-        getOutputChannel(context).appendLine(JSON.stringify(result, null, 2));
-        await displayResult(context, { result });
+        if (!rpc) {
+          rpc = await createRpcServer(context);
+        }
+
+        const cwd = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ||
+          path.dirname(vscode.window.activeTextEditor?.document.uri.fsPath || '');
+
+        const result = await rpc.eval(code, cwd);
+
+        await resultsViewProvider.displayResult({ result });
         return { result };
       } catch (err: any) {
-        getOutputChannel(context).appendLine(JSON.stringify(err, null, 2));
         const error = err instanceof Error ? err.message : String(err);
-        await displayResult(context, { error });
+        vscode.window.showErrorMessage(`PHP Workbench: Error: ${error}`);
+        await resultsViewProvider.displayResult({ error });
         return { error };
       }
     }
@@ -559,7 +174,8 @@ export function activate(context: vscode.ExtensionContext) {
     executeCodeCommand,
     restartSessionCommand,
     reportIssueCommand,
-    providerRegistration
+    providerRegistration,
+    resultsViewRegistration
   );
 }
 
@@ -567,33 +183,8 @@ export function activate(context: vscode.ExtensionContext) {
  * Called by VS Code when the extension is deactivated.
  */
 export function deactivate() {
-  if (php) {
-    if (!php.killed) {
-      terminateProcess(php);
-    }
-    php = undefined;
+  if (rpc) {
+    rpc.dispose();
+    rpc = undefined;
   }
-
-  if (connection) {
-    connection.dispose();
-    connection = undefined;
-  }
-
-  if (webviewPanel) {
-    webviewPanel.dispose();
-    webviewPanel = undefined;
-  }
-
-  if (outputChannel) {
-    outputChannel.dispose();
-    outputChannel = undefined;
-  }
-
-  if (contentProvider) {
-    contentProvider.clear();
-    contentProvider = undefined;
-  }
-
-  pharPath = undefined;
-  token = undefined;
 }
