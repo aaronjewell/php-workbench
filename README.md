@@ -6,7 +6,7 @@ Modern PHP development relies heavily on Composer packages. PHP Workbench automa
 
 ## Demo
 
-![PHP Workbench Demo](res/demo.gif)
+![PHP Workbench Demo](res/demo.png)
 
 ## Features
 
