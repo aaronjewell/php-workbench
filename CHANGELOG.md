@@ -9,8 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Execution Timeout Protection** - Automatically terminate PHP execution after 2 seconds to prevent infinite loops from hanging the extension
-- **Processed Code Diffs** - View the diff of the submitted original code compared to the processed code that is evaluated
+- **Configurable Execution Timeout** - Default 30s timeout for PHP execution with the ability to disable by setting timeout to 0; configurable via `phpWorkbench.timeout`
+- **Processed Code Diffs** - View a diff of the original raw code compared to the transformed code that is evaluated
+- **Runner Diagnostics** - Structured logging for the PHP runner (writes to STDERR or an optional log file) controlled by `phpWorkbench.debug` and `phpWorkbench.logFile`
+- **Extension Logger** - Unified output channel for extension diagnostics
 
 ### Changed
 
@@ -23,8 +25,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Use a more limited set of psysh CodeCleaner passes, and additional new one to handle namespaces and conditional class declarations
 - Enhanced test coverage for timeout handling, concurrent execution, and webview panel reuse
 - Improved webview resource management with proper CSP headers and nonce-based script loading
+- Introduced centralized `Configuration` and `Logger` in the PHP runner; stderr is piped to the extension output channel
+- Refactored session task/terminal lifecycle for more robust startup/shutdown
+- Test harness now runs against a dedicated `test-workspace` and updated extension host launch configuration
 
-## [0.3.1] - 2025-01-12
+## [0.3.1] - 2025-07-12
 
 ### Security
 
