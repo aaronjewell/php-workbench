@@ -6,8 +6,8 @@ namespace PhpWorkbench;
 
 class Output {
     protected string $stdoutBuffer = '';
-    protected string $dirty = '';
-    protected string $cleaned = '';
+    protected string $raw = '';
+    protected ?string $transformed = null;
     protected ?\Throwable $lastException = null;
     protected mixed $returnValue = null;
 
@@ -32,14 +32,14 @@ class Output {
         $this->returnValue = \var_export($value, true);
     }
 
-    public function writeDirty(string $dirty): void
+    public function writeRaw(string $raw): void
     {
-        $this->dirty .= $dirty;
+        $this->raw .= $raw;
     }
 
-    public function writeCleaned(string $cleaned): void
+    public function writeTransformed(string $transformed): void
     {
-        $this->cleaned .= $cleaned;
+        $this->transformed .= $transformed;
     }
 
     public function getOutputBuffer(): string
@@ -60,8 +60,8 @@ class Output {
     protected function reset(): void
     {
         $this->stdoutBuffer = '';
-        $this->dirty = '';
-        $this->cleaned = '';
+        $this->raw = '';
+        $this->transformed = null;
         $this->lastException = null;
     }
 
@@ -81,8 +81,8 @@ class Output {
                 'result' => [
                     'stdout' => $this->stdoutBuffer,
                     'returnValue' => $this->returnValue,
-                    'dirty' => $this->dirty,
-                    'cleaned' => $this->cleaned,
+                    'raw' => $this->raw,
+                    'transformed' => $this->transformed,
                 ]
             ];
         }

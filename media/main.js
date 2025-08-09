@@ -45,6 +45,10 @@ function showState(state) {
   updateTimestamp();
 }
 
+// Store current raw and transformed code for diff view
+let currentRawCode = null;
+let currentTransformedCode = null;
+
 /**
  * Displays execution results
  * @param {Object} data - The execution result data
@@ -55,9 +59,8 @@ function displayResults(data) {
   // Reset all sections
   Object.values(elements.sections).forEach(section => section.classList.add('hidden'));
 
-  // Clear stored code for diff view
-  currentDirtyCode = '';
-  currentCleanedCode = '';
+  currentRawCode = null;
+  currentTransformedCode = null;
 
   if (data.error) {
     elements.statusIndicator.textContent = 'Error';
@@ -81,11 +84,9 @@ function displayResults(data) {
       }
     });
 
-    // Show code processing section if dirty and cleaned code are available
-    if (data.result.dirty && data.result.cleaned) {
-      // Store the code for diff view
-      currentDirtyCode = data.result.dirty;
-      currentCleanedCode = data.result.cleaned;
+    if (data.result.raw && data.result.transformed) {
+      currentRawCode = data.result.raw;
+      currentTransformedCode = data.result.transformed;
 
       elements.sections.codeProcessing.classList.remove('hidden');
     }
@@ -105,37 +106,19 @@ window.addEventListener('message', event => {
   }
 });
 
-// Store current dirty and cleaned code for diff view
-let currentDirtyCode = '';
-let currentCleanedCode = '';
-
 /**
  * Opens the native VS Code diff editor
  */
 function openDiffEditor() {
-  if (currentDirtyCode && currentCleanedCode) {
-    // Provide user feedback
-    const notice = elements.codeProcessingNotice;
-    const originalText = notice.innerHTML;
-
-    notice.innerHTML = '<span class="code-processing-text">⏳ Opening diff editor...</span>';
-    notice.style.cursor = 'wait';
-
+  if (currentRawCode && currentTransformedCode) {
     vscode.postMessage({
       type: 'showDiff',
-      dirty: currentDirtyCode,
-      cleaned: currentCleanedCode,
+      raw: currentRawCode,
+      transformed: currentTransformedCode,
     });
-
-    // Reset notice after a short delay
-    setTimeout(() => {
-      notice.innerHTML = originalText;
-      notice.style.cursor = 'pointer';
-    }, 1000);
   }
 }
 
-// Add event listeners for code processing notice
 elements.codeProcessingNotice.addEventListener('click', openDiffEditor);
 
 updateTimestamp();

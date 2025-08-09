@@ -3,73 +3,71 @@ import { ExecuteCodeResponse } from './rpc';
 import { DiffContentProvider } from './diff';
 
 export class ResultsViewProvider implements vscode.WebviewViewProvider {
+  public static readonly viewType = 'phpWorkbench.results';
 
-	public static readonly viewType = 'phpWorkbench.results';
+  private _view?: vscode.WebviewView;
 
-	private _view?: vscode.WebviewView;
+  constructor(
+    private readonly _extensionUri: vscode.Uri,
+    private readonly _diffProvider: DiffContentProvider
+  ) {}
 
-	constructor(
-		private readonly _extensionUri: vscode.Uri,
-		private readonly _diffProvider: DiffContentProvider,
-	) { }
+  public resolveWebviewView(
+    webviewView: vscode.WebviewView,
+    _context: vscode.WebviewViewResolveContext,
+    _token: vscode.CancellationToken
+  ) {
+    this._view = webviewView;
 
-	public resolveWebviewView(
-		webviewView: vscode.WebviewView,
-		_context: vscode.WebviewViewResolveContext,
-		_token: vscode.CancellationToken,
-	) {
-		this._view = webviewView;
+    webviewView.webview.options = {
+      enableScripts: true,
+      localResourceRoots: [this._extensionUri],
+    };
 
-		webviewView.webview.options = {
-			enableScripts: true,
-			localResourceRoots: [
-				this._extensionUri
-			]
-		};
+    webviewView.webview.html = this._getHtmlForWebview(webviewView.webview);
 
-		webviewView.webview.html = this._getHtmlForWebview(webviewView.webview);
+    webviewView.webview.onDidReceiveMessage(async message => {
+      switch (message.type) {
+        case 'showDiff':
+          await this._diffProvider.showCodeDiff(message.raw, message.transformed);
+          break;
+      }
+    });
+  }
 
-		webviewView.webview.onDidReceiveMessage(async message => {
-            switch (message.type) {
-              case 'showDiff':
-                vscode.window.showInformationMessage(`Showing diff`);
-                await this._diffProvider.showCodeDiff(message.dirty, message.cleaned);
-                break;
-            }
-        });
-	}
-
-    async displayResult(
-        result: ExecuteCodeResponse
-      ): Promise<void> {
-        if (!this._view?.visible) {
-          this._view?.show?.(true);
-        }
-        this._view?.webview.postMessage({
-          type: 'executionResult',
-          data: result,
-        });
+  async displayResult(result: ExecuteCodeResponse): Promise<void> {
+    if (!this._view?.visible) {
+      this._view?.show?.(true);
     }
+    this._view?.webview.postMessage({
+      type: 'executionResult',
+      data: result,
+    });
+  }
 
-    async startExecution() {
-        if (!this._view) {
-            // if the user hasn't opened up the extensions panel, we need to ensure the webview view gets created
-            await vscode.commands.executeCommand('workbench.view.extension.phpWorkbench');
-        }
-        if (!this._view?.visible) {
-            this._view?.show?.(true);
-        }
-        this._view?.webview.postMessage({
-            type: 'executionStarted',
-        });
+  async startExecution() {
+    if (!this._view) {
+      // if the user hasn't opened up the extensions panel, we need to ensure the webview view gets created
+      await vscode.commands.executeCommand('workbench.view.extension.phpWorkbench');
     }
+    if (!this._view?.visible) {
+      this._view?.show?.(true);
+    }
+    this._view?.webview.postMessage({
+      type: 'executionStarted',
+    });
+  }
 
-	private _getHtmlForWebview(webview: vscode.Webview) {
-        const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'main.js'));
-        const styleUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'main.css'));
-      
-        const nonce = this._getNonce();
-        return `<!DOCTYPE html>
+  private _getHtmlForWebview(webview: vscode.Webview) {
+    const scriptUri = webview.asWebviewUri(
+      vscode.Uri.joinPath(this._extensionUri, 'media', 'main.js')
+    );
+    const styleUri = webview.asWebviewUri(
+      vscode.Uri.joinPath(this._extensionUri, 'media', 'main.css')
+    );
+
+    const nonce = this._getNonce();
+    return `<!DOCTYPE html>
                 <html lang="en">
                 <head>
                     <meta charset="UTF-8" />
@@ -123,14 +121,14 @@ export class ResultsViewProvider implements vscode.WebviewViewProvider {
                     <script nonce="${nonce}" src="${scriptUri}"></script>
                 </body>
             </html>`;
-	}
+  }
 
-    private _getNonce() {
-        let text = '';
-        const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-        for (let i = 0; i < 32; i++) {
-          text += possible.charAt(Math.floor(Math.random() * possible.length));
-        }
-        return text;
+  private _getNonce() {
+    let text = '';
+    const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    for (let i = 0; i < 32; i++) {
+      text += possible.charAt(Math.floor(Math.random() * possible.length));
     }
+    return text;
+  }
 }
