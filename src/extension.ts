@@ -4,6 +4,7 @@ import { ExecuteCodeResponse, RpcServer } from './rpc';
 import path from 'node:path';
 import { Session } from './session';
 import { ResultsViewProvider } from './results';
+import { Logger } from './logger';
 
 let rpc: RpcServer | undefined;
 
@@ -29,30 +30,52 @@ async function createRpcServer(context: vscode.ExtensionContext): Promise<RpcSer
   }
 
   const entrypoint = await getPhpEntrypoint(context);
+  Logger.info(`Using entrypoint: ${entrypoint}`);
 
-  vscode.window.showInformationMessage(`PHP Workbench: Using entrypoint: ${entrypoint}`);
+  const config = vscode.workspace.getConfiguration('phpWorkbench');
+  const debugEnabled = config.get<boolean>('debug');
+  const logFile = config.get<string>('logFile');
+  const timeout = config.get<number>('timeout');
+
+  if (debugEnabled) {
+    Logger.info(`Debug enabled`);
+  }
+  if (logFile) {
+    Logger.info(`Log file: ${logFile}`);
+  }
+
+  const cwd =
+    vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ||
+    path.dirname(vscode.window.activeTextEditor?.document.uri.fsPath || '');
+  Logger.info(`Using cwd: ${cwd}`);
 
   const session = new Session({
     command: 'php',
-    args: [await getPhpEntrypoint(context)],
-    env: process.env,
-    cwd: vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ||
-        path.dirname(vscode.window.activeTextEditor?.document.uri.fsPath || ''),
+    args: [entrypoint],
+    env: {
+      ...process.env,
+      ...(debugEnabled ? { PHP_WORKBENCH_DEBUG: '1' } : {}),
+      ...(logFile ? { PHP_WORKBENCH_LOG: logFile } : {}),
+      ...(timeout ? { PHP_WORKBENCH_TIMEOUT: timeout.toString() } : {}),
+    },
+    cwd,
   });
 
+  Logger.info('Executing background session task');
   const execution = await vscode.tasks.executeTask(session.task!);
 
   rpc = new RpcServer(session);
 
   await rpc.listen();
+  Logger.info(`RPC server listening`);
 
-  rpc.onDidError((error) => {
+  rpc.onDidError(error => {
     vscode.window.showErrorMessage(`PHP Workbench: ${error}`);
     execution.terminate();
     rpc = undefined;
   });
 
-  rpc.onDidExit((code) => {
+  rpc.onDidExit(code => {
     vscode.window.showInformationMessage(`PHP Workbench: Session exited with code ${code}`);
     execution.terminate();
     rpc = undefined;
@@ -93,6 +116,10 @@ export function activate(context: vscode.ExtensionContext) {
     'phpWorkbench.newScratchpad',
     async () => {
       try {
+        if (!rpc) {
+          rpc = await createRpcServer(context);
+        }
+
         const document = await vscode.workspace.openTextDocument({
           language: 'php',
           content: '<?php\n\n',
@@ -139,7 +166,8 @@ export function activate(context: vscode.ExtensionContext) {
           rpc = await createRpcServer(context);
         }
 
-        const cwd = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ||
+        const cwd =
+          vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ||
           path.dirname(vscode.window.activeTextEditor?.document.uri.fsPath || '');
 
         const result = await rpc.eval(code, cwd);
@@ -148,7 +176,6 @@ export function activate(context: vscode.ExtensionContext) {
         return { result };
       } catch (err: any) {
         const error = err instanceof Error ? err.message : String(err);
-        vscode.window.showErrorMessage(`PHP Workbench: Error: ${error}`);
         await resultsViewProvider.displayResult({ error });
         return { error };
       }
@@ -187,4 +214,5 @@ export function deactivate() {
     rpc.dispose();
     rpc = undefined;
   }
+  Logger.dispose();
 }

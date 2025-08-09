@@ -30,6 +30,26 @@
   "activationEvents": [],
   "main": "./out/extension.js",
   "contributes": {
+    "configuration": {
+      "title": "PHP Workbench",
+      "properties": {
+        "phpWorkbench.debug": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable debug logging in the PHP runner (writes to STDERR unless a log file is set)."
+        },
+        "phpWorkbench.logFile": {
+          "type": "string",
+          "default": "",
+          "description": "Optional path to a log file for the PHP runner. When empty, logs go to STDERR."
+        },
+        "phpWorkbench.timeout": {
+          "type": "number",
+          "default": 30,
+          "description": "Maximum execution time in seconds. When 0, the PHP runner will run indefinitely."
+        }
+      }
+    },
     "commands": [
       {
         "command": "phpWorkbench.newScratchpad",
