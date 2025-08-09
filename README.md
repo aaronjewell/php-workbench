@@ -13,15 +13,17 @@ Modern PHP development relies heavily on Composer packages. PHP Workbench automa
 ### 🚀 **Instant PHP Execution**
 
 - Execute PHP code snippets with `Ctrl+Enter` (or `Cmd+Enter`)
-- See results immediately in VS Code's output panel
-- Automatic Composer integration - Uses your project's vendor/autoload.php automatically
+- See results in the PHP Workbench Results view
+- Automatic Composer integration - uses your project's `vendor/autoload.php` automatically
 - Full error handling with line numbers and stack traces
 - No need for `<?php` tags - just write PHP code
+- Open a native VS Code diff (original → processed) with one click
 
 ### 📝 **Smart Scratchpad Management**
 
 - Full VS Code features: syntax highlighting, IntelliSense, debugging
 - Multiple scratchpads for different experiments, all with shared context
+ - No temp files or context switching—stay in flow inside VS Code
 
 ## Installation
 
@@ -37,7 +39,7 @@ Modern PHP development relies heavily on Composer packages. PHP Workbench automa
 3. A new untitled PHP file opens in your editor
 4. Write your PHP code (no need for `<?php` tags, but they may help your other tools)
 5. Press `Ctrl+Enter` (or `Cmd+Enter`) to execute
-6. Results appear instantly in the "PHP Workbench" output panel
+6. Results appear in the "PHP Workbench" Results view
 
 **That's it!**
 
@@ -67,7 +69,18 @@ PHP Workbench works out of the box with sensible defaults:
 
 - **PHP**: Uses `php` command from your PATH
 - **Composer**: Automatically detects and includes vendor/autoload.php from your workspace
-- **Output**: Results appear in the "PHP Workbench" output panel
+- **Results**: Results appear in a dedicated "PHP Workbench" Results view
+
+### Settings
+
+Tune behavior from Settings → Extensions → PHP Workbench:
+
+- `phpWorkbench.debug` (boolean, default: false)
+  - Flip on diagnostic logs when needed. See runner logs in the Output channel.
+- `phpWorkbench.logFile` (string, default: empty)
+  - Prefer files? Send runner logs to a path you control. Empty = STDERR.
+- `phpWorkbench.timeout` (number, default: 30)
+  - Guard rails for runaway code. 30s by default; set to `0` for no limit.
 
 ## Keyboard Shortcuts
 
