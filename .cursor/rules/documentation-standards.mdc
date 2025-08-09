@@ -70,4 +70,3 @@ async function executePhpCode(code: string, workspacePath: string): Promise<Exec
 - Include common use cases and workflows
 - Provide troubleshooting section
 - Use screenshots for complex UI interactions
-- Use screenshots for complex UI interactions

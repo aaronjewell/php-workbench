@@ -15,7 +15,6 @@ A **step** is a set of actions that takes the codebase from one deliverable stat
 - **Deliverable State**: Code can be released at any point (proper quality and correctness)
 - **Non-Regression**: Cannot make the extension worse than the previous state
 - **Minimal Size**: As small as reasonably possible given the nature of the change
-- **Test-Driven**: Follow @test-driven-development.mdc for zero-one-many approach and @testing-standards.mdc for implementation
 - **Complete**: Must pass `test` npm script before considering step complete
 
 ### Step Characteristics
@@ -27,50 +26,10 @@ A **step** is a set of actions that takes the codebase from one deliverable stat
 ## Step Size Guidelines
 Use judgment to determine appropriate step size based on:
 
-- **Feature Addition**: Break into setup → implementation → integration → testing
 - **Refactoring**: Isolate changes to single classes/modules where possible
 - **Bug Fixes**: Minimal change to address specific issue
 - **Testing**: Add tests incrementally alongside feature development
 - **Configuration**: One configuration change per step
-
-## Examples of Good Steps
-
-### ✅ Small, Deliverable Steps
-```
-Step 1: Add TypeScript interface for ExecutionResult
-Step 2: Create basic CodeExecutor class with method signatures
-Step 3: Implement executeCode method with minimal functionality
-Step 4: Add error handling to executeCode method
-Step 5: Add timeout functionality to executeCode method
-```
-
-### ❌ Steps That Are Too Large
-```
-❌ Implement complete PHP execution with Composer integration, error handling, 
-   timeout, output formatting, and UI integration
-```
-
-## Examples of Actions Within Steps
-
-### ✅ Good Actions (within Step 2: Create basic CodeExecutor class)
-```
-Action 1: Create CodeExecutor class file with constructor
-Action 2: Add executeCode method signature with TypeScript types
-Action 3: Add private helper method signatures
-Action 4: Add basic JSDoc documentation
-```
-
-### ❌ Actions That Are Too Large
-```
-❌ Implement entire CodeExecutor class with all methods and error handling
-❌ Add multiple unrelated features in one action
-```
-
-## Test-Driven Development Requirements
-- **MUST write tests before adding or modifying any code**
-- **MUST validate tests pass after implementation** 
-- **NEVER write business logic without first writing the test**
-- Use Red-Green-Refactor cycle: failing test → minimal code → refactor
 
 ## Completion Criteria
 Every step must satisfy:
@@ -101,10 +60,3 @@ Every step must satisfy:
 - **Commit Format**: Follow conventional commits standard (@conventional-commits.mdc)
 - **Release Timing**: After each completed step (when deliverable state is reached)
 - **Release Types**: Use semantic versioning based on conventional commit types
-
-## Benefits of This Approach
-- **Reduced Risk**: Smaller changes mean easier debugging and rollback
-- **Continuous Delivery**: Always in a releasable state
-- **Better Testing**: Issues caught earlier with smaller change sets
-- **Clearer Progress**: Visible progress through incremental improvements
-- **Team Collaboration**: Easier code reviews and parallel development

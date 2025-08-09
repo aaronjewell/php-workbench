@@ -10,14 +10,13 @@ PHP Workbench is a VSCode extension that enables PHP developers to quickly test 
 
 ## Core Files
 - **Entry Point**: @../../src/extension.ts - Main activation and command registration
-- **Configuration**: @../../package.json - Extension manifest and commands
+- **PHP Entry Point**: @../../bin/workbench - Code runner entry
 - **Requirements**: @../../USER_STORIES.md - Feature requirements and acceptance criteria
 
 ## Architecture Principles
 - **Separation of Concerns**: Keep VSCode API interactions separate from business logic
 - **Testability**: All business logic should be unit testable
 - **Minimal Dependencies**: Only add dependencies when necessary
-- **Error Handling**: Graceful degradation when PHP/Composer not available
 
 ## Key Features (from User Stories)
 1. **Scratchpad Creation**: Temporary PHP files with syntax highlighting
@@ -25,26 +24,4 @@ PHP Workbench is a VSCode extension that enables PHP developers to quickly test 
 3. **Composer Integration**: Automatic vendor/autoload.php inclusion
 4. **Error Display**: Clear error messages with line numbers
 5. **Output Panel**: Dedicated PHP Workbench output channel
-
-## Development Workflow
-1. Write tests first
-2. Implement minimal code to pass tests
-3. Refactor while keeping tests green
-4. Document why and what, not how
-5. Keep side effects separate from business logic
-
-## File Organization
-```
-src/
-├── extension.ts           # Main entry point
-├── commands/             # Command implementations
-├── services/             # Business logic services
-├── utils/               # Utility functions
-└── test/                # Test files
-```
-
-## Configuration Files
-- @../../tsconfig.json - TypeScript configuration
-- @../../eslint.config.mjs - Linting rules
-- @../../package.json - Dependencies and scripts
-- [package.json](mdc:package.json) - Dependencies and scripts
+5. **Results View**: Dedicated PHP Workbench panel webview view

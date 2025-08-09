@@ -5,11 +5,6 @@ description: "TypeScript coding standards and best practices"
 
 # TypeScript Coding Standards
 
-## Service Class Template
-Follow this pattern for testable business logic:
-
-@templates/service-template.ts
-
 ## Naming Conventions
 - Use **abstract method names** and **concrete class names**
 - Use PascalCase for classes, interfaces, and types
@@ -45,20 +40,3 @@ Follow this pattern for testable business logic:
 - Include JSDoc comments for public APIs
 - Explain business logic and complex algorithms
 - Document edge cases and assumptions
-
-## Example Structure
-```typescript
-/**
- * Manages PHP code execution with proper error handling
- * Why: Separates execution logic from UI concerns for testability
- */
-export class CodeExecutor {
-  /**
-   * Executes PHP code and returns structured result
-   * What: Handles timeout, error capturing, and output formatting
-   */
-  async executeCode(code: string): Promise<ExecutionResult> {
-    // Implementation here
-  }
-}
-```
