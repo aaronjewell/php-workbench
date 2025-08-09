@@ -12,18 +12,35 @@ use PhpWorkbench\ExecutionClosure;
 use PhpWorkbench\Executor;
 use PhpWorkbench\Input;
 use PhpWorkbench\Output;
+use PhpWorkbench\Logger;
+use PhpWorkbench\Timeout;
+use PhpWorkbench\Configuration;
 
-// require token to validate against later requests
-$token = getenv('PHP_WORKBENCH_TOKEN');
-if ($token === false || $token === '') {
-    fwrite(STDERR, "Error: token required\n");
-    exit(1);
+try {
+    $config = Configuration::fromEnvironment();
+} catch (Throwable $e) {
+    fwrite(STDERR, $e->getMessage() . "\n");
+    exit($e->getCode() ?: 1);
+}
+
+if ($config->isDebugEnabled()) {
+    Logger::info('PHP Workbench runner starting', [
+        'php_version' => PHP_VERSION,
+        'cwd' => getcwd(),
+        'log_destination' => $config->getLogDestination(),
+        'timeout' => $config->getTimeoutSeconds(),
+        'debug_enabled' => $config->isDebugEnabled(),
+    ]);
 }
 
 try {
+    Timeout::init($config->getTimeoutSeconds());
+
+    Logger::init($config->isDebugEnabled(), $config->getLogDestination());
+
     $executor = new Executor(
         new Context(),
-        new Input(STDIN, $token),
+        new Input(STDIN, $config->getToken()),
         new Output(STDOUT),
         new CodeCleaner(),
         new ErrorHandler(),
@@ -35,4 +52,7 @@ try {
 } catch (Throwable $e) {
     fwrite(STDERR, $e->getMessage() . "\n");
     exit($e->getCode() ?? 1);
+} finally {
+    Logger::info('PHP Workbench runner shutting down');
+    Logger::shutdown();
 }

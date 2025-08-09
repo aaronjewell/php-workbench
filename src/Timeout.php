@@ -6,12 +6,19 @@ namespace PhpWorkbench;
 
 class Timeout
 {
-    public static function set(int $seconds): void
+    static private int $defaultSeconds = 30;
+
+    public static function init(?int $seconds = null): void
     {
-        if (self::isSupported()) {
+        self::$defaultSeconds = $seconds ?? self::$defaultSeconds;
+    }
+
+    public static function set(?int $seconds = null): void
+    {
+        if (self::isSupported() && $seconds !== 0) {
             \pcntl_async_signals(true);
             \pcntl_signal(SIGALRM, fn () => throw new \RuntimeException('Execution timed out.'));
-            \pcntl_alarm($seconds);
+            \pcntl_alarm($seconds ?? self::$defaultSeconds);
         }
     }
 

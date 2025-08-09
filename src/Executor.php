@@ -6,6 +6,7 @@ namespace PhpWorkbench;
 
 use Psy\CodeCleaner\NoReturnValue;
 use Psy\Context;
+use Psy\Exception\ParseErrorException;
 use PhpWorkbench\CodeCleaner;
 use PhpWorkbench\Input;
 
@@ -14,6 +15,8 @@ class Executor {
     protected bool $lastExecSuccess = false;
 
     protected string $code = '';
+
+    protected int $currentRequestId = -1;
 
     public function __construct(
         protected Context $context,
@@ -37,42 +40,49 @@ class Executor {
     public function getInput(): void
     {
         $params = $this->input->read();
+        $this->currentRequestId = $this->input->getId();
         $this->addCode($params[0]);
         $this->setWorkingDirectory($params[1]);
     }
 
     public function addCode(string $code): void
     {
-        $dirty = $code;
+        $raw = $code;
         
         // strip off <?php if exists
-        $code = preg_replace('/^<\?php\s*/', '', $code);
+        $code = \preg_replace('/^<\?php\s*/', '', $code);
 
         // also handle shorthand opening tags
-        $code = preg_replace('/^<\?=\s*/', '', $code);
+        $code = \preg_replace('/^<\?=\s*/', '', $code);
 
         // lastly, strip off the closing tag
-        $code = preg_replace('/^<\?\s*\s*$/', '', $code);
+        $code = \preg_replace('/^<\?\s*\s*$/', '', $code);
 
-        if ($clean = $this->cleaner->clean([ $code ])) {
-            $this->code .= $clean;
-            $this->output->writeDirty($dirty);
-            $this->output->writeCleaned($clean);
+        try {
+            if ($clean = $this->cleaner->clean([ $code ])) {
+                $this->code .= $clean;
+                $this->output->writeRaw($raw);
+                $this->output->writeTransformed($clean);
+            }
+        } catch (ParseErrorException $e) {
+            Logger::debug('Error cleaning code', ['error' => $e->getMessage(), 'code' => $e->getCode(), 'type' => \get_class($e)]);
+            $this->code .= $code;
+            $this->output->writeRaw($raw);
         }
     }
 
     public function flushCode(): string
     {
-        return trim($this->code) ?: 'return null;';
+        return \trim($this->code) ?: 'return null;';
     }
 
     public function setWorkingDirectory(string $directory): void
     {
-        if (!is_dir($directory)) {
+        if (!\is_dir($directory)) {
             return;
         }
 
-        chdir($directory);
+        \chdir($directory);
     }
 
     public function getBoundClass(): ?string
@@ -143,7 +153,6 @@ class Executor {
      */
     public function handleStdout(string $out, int $phase = \PHP_OUTPUT_HANDLER_FINAL)
     {
-
         if ($out !== '' && !($phase & \PHP_OUTPUT_HANDLER_CLEAN)) {
             $this->output->writeStdout($out);
         }
@@ -161,11 +170,18 @@ class Executor {
         $this->errorHandler->setErrorReporting();
     }
 
+    public function getErrorReporting(): int
+    {
+        return $this->errorHandler->getErrorReporting();
+    }
+
     public function handleError(int $errNo, string $errStr, string $errFile, int $errLine): void
     {
+        Logger::debug('Error occurred', ['error' => $errStr, 'file' => $errFile, 'line' => $errLine]);
         $exception = $this->errorHandler->handle($errNo, $errStr, $errFile, $errLine);
 
         if ($exception) {
+            Logger::debug('Error is fatal, throwing exception', ['error' => $errStr, 'file' => $errFile, 'line' => $errLine]);
             $this->writeException($exception);
         }
     }
@@ -210,5 +226,10 @@ class Executor {
     {
         $this->code = '';
         $this->output->flush($this->input->getId());
+    }
+
+    public function getCurrentRequestId(): int
+    {
+        return $this->currentRequestId;
     }
 }
