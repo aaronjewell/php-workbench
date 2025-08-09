@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2025-08-09
+
 ### Added
 
 - **Configurable Execution Timeout** - Default 30s timeout for PHP execution with the ability to disable by setting timeout to 0; configurable via `phpWorkbench.timeout`
