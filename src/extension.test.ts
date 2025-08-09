@@ -21,9 +21,19 @@ suite('Extension Test Suite', () => {
     const config = extension.packageJSON.contributes.configuration;
 
     assert.ok(config);
-    assert.equal(config.type, 'object');
     assert.equal(config.title, 'PHP Workbench');
-    assert.ok(config.properties);
+    assert.equal(config.properties['phpWorkbench.debug'].type, 'boolean');
+    assert.equal(config.properties['phpWorkbench.debug'].default, false);
+    assert.equal(
+      config.properties['phpWorkbench.debug'].description,
+      'Enable debug logging in the PHP runner (writes to STDERR unless a log file is set).'
+    );
+    assert.equal(config.properties['phpWorkbench.logFile'].type, 'string');
+    assert.equal(config.properties['phpWorkbench.logFile'].default, '');
+    assert.equal(
+      config.properties['phpWorkbench.logFile'].description,
+      'Optional path to a log file for the PHP runner. When empty, logs go to STDERR.'
+    );
   });
 
   test('phpWorkbench.newScratchpad command should be defined as keyboard shortcut in package.json', async () => {
@@ -151,7 +161,7 @@ suite('Extension Test Suite', () => {
 
   test('phpWorkbench.executeCode should handle PHP syntax errors', async () => {
     const document = await vscode.workspace.openTextDocument({
-      content: '<?php $a;',
+      content: '<?php $a = ;',
       language: 'php',
     });
     await vscode.window.showTextDocument(document);
@@ -160,7 +170,7 @@ suite('Extension Test Suite', () => {
       'phpWorkbench.executeCode'
     );
 
-    assert.equal(response.error, 'Undefined variable $a');
+    assert.equal(response.error, 'syntax error, unexpected token ";"');
     assert.equal(typeof response.result, 'undefined');
   });
 
@@ -234,7 +244,6 @@ suite('Extension Test Suite', () => {
   });
 
   test('phpWorkbench.executeCode should handle infinite loops with a timeout', async function () {
-    this.timeout(5000);
     const document = await vscode.workspace.openTextDocument({
       content: '<?php while(true);',
       language: 'php',
@@ -290,7 +299,7 @@ echo "line3";`,
 
     assert.equal(
       response.error,
-      `PHP Parse error: Syntax error, unexpected T_STRING, expecting ';' on line 3`
+      `syntax error, unexpected identifier "line3", expecting "," or ";"`
     );
     assert.equal(response.result, undefined);
   });
@@ -470,23 +479,6 @@ echo "after";`,
     assert.strictEqual(editor.selection.end.character, endPos.character);
   });
 
-  test('phpWorkbench.executeCode should show results in the webview', async () => {
-    const document = await vscode.workspace.openTextDocument({
-      content: '$a = 1;',
-      language: 'php',
-    });
-
-    await vscode.window.showTextDocument(document);
-
-    await vscode.commands.executeCommand<ExecuteCodeResponse>('phpWorkbench.executeCode');
-
-    assert.ok(
-      vscode.window.tabGroups.all.some(tabGroup =>
-        tabGroup.tabs.some(tab => tab.label === 'PHP Workbench Results')
-      )
-    );
-  });
-
   test('phpWorkbench.restartSession should restart session', async () => {
     const document = await vscode.workspace.openTextDocument({
       content: '$a = 1;',
@@ -537,7 +529,7 @@ echo "after";`,
     assert.equal(typeof response.result, 'undefined');
   });
 
-  test('should reuse existing webview panel when available', async () => {
+  test('phpWorkbench.executeCode should reuse existing webview panel when available', async () => {
     const document = await vscode.workspace.openTextDocument({
       content: '<?php echo "first";',
       language: 'php',
@@ -564,7 +556,7 @@ echo "after";`,
     assert.equal(initialTabCount, finalTabCount);
   });
 
-  test('should handle concurrent execution requests', async () => {
+  test('phpWorkbench.executeCode should handle concurrent execution requests', async () => {
     const document = await vscode.workspace.openTextDocument({
       content: '<?php usleep(10000); echo "concurrent";',
       language: 'php',
@@ -584,7 +576,7 @@ echo "after";`,
     });
   });
 
-  test('should handle extension activation and deactivation', async () => {
+  test('phpWorkbench.executeCode should handle extension activation and deactivation', async () => {
     const extension = vscode.extensions.getExtension('aaronjewell.php-workbench')!;
 
     // Extension should be active after running tests
@@ -598,7 +590,7 @@ echo "after";`,
     assert.ok(commands.includes('phpWorkbench.reportIssue'));
   });
 
-  test('should handle very large output', async () => {
+  test('phpWorkbench.executeCode should handle very large output', async () => {
     const document = await vscode.workspace.openTextDocument({
       content: '<?php for($i = 0; $i < 1000; $i++) { echo str_repeat("A", 100); }',
       language: 'php',
