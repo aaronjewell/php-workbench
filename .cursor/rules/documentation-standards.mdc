@@ -6,7 +6,6 @@ description: "Documentation standards and practices"
 # Documentation Standards
 
 ## Documentation Philosophy
-- Focus on **why** and **what**, not **how**
 - Document business logic and complex algorithms
 - Explain design decisions and trade-offs
 - Keep documentation concise and actionable
@@ -31,7 +30,7 @@ Reference these key project files for context:
 - Contributing guidelines
 
 ## Inline Comments
-- Explain **why** code exists, not what it does
+- Do not write obvious comments
 - Document complex business logic
 - Explain non-obvious algorithms
 - Note important assumptions or constraints

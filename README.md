@@ -23,7 +23,7 @@ Modern PHP development relies heavily on Composer packages. PHP Workbench automa
 
 - Full VS Code features: syntax highlighting, IntelliSense, debugging
 - Multiple scratchpads for different experiments, all with shared context
- - No temp files or context switching—stay in flow inside VS Code
+- No temp files or context switching—stay in flow inside VS Code
 
 ## Installation
 
