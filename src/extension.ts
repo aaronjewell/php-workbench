@@ -1,28 +1,13 @@
 import * as vscode from 'vscode';
 import { DiffContentProvider } from './diff';
 import { ExecuteCodeResponse, RpcServer } from './rpc';
+import { getPhpEntrypoint } from './entrypoint';
 import path from 'node:path';
 import { Session } from './session';
 import { ResultsViewProvider } from './results';
 import { Logger } from './logger';
 
 let rpc: RpcServer | undefined;
-
-/**
- * Gets the cached path to the PHP Workbench PHAR file
- *
- * @param context - The extension context
- * @returns The path to the PHP Workbench PHAR file
- */
-async function getPhpEntrypoint(context: vscode.ExtensionContext): Promise<string> {
-  try {
-    const pharPath = context.asAbsolutePath('out/php-workbench.phar');
-    await vscode.workspace.fs.stat(vscode.Uri.file(pharPath));
-    return pharPath;
-  } catch (error) {
-    return context.asAbsolutePath('bin/workbench');
-  }
-}
 
 async function createRpcServer(context: vscode.ExtensionContext): Promise<RpcServer> {
   if (rpc) {
