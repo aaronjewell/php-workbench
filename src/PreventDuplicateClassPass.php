@@ -52,6 +52,6 @@ class PreventDuplicateClassPass extends CodeCleanerPass
             $name = array_merge($namespace, $name);
         }
 
-        return new Node\Name\FullyQualified($name)->toCodeString();
+        return (new Node\Name\FullyQualified($name))->toCodeString();
     }
 }
